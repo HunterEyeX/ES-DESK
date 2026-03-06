@@ -1,0 +1,3121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HunterEye · Trading Desk</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg0:#070b0f;--bg1:#0c1118;--bg2:#111820;--bg3:#161e28;--bg4:#1c2530;
+  --border:#1e2d3d;--border2:#243345;
+  --text1:#e8edf2;--text2:#8fa3b8;--text3:#4a6278;
+  --green:#00e87a;--red:#f03050;--gold:#e8a000;--accent:#00c8f0;
+  --orange:#f07820;--purple:#a060f0;
+  --green-dim:rgba(0,232,122,.1);--red-dim:rgba(240,48,80,.1);
+  --gold-dim:rgba(232,160,0,.1);--accent-dim:rgba(0,200,240,.1);
+  --orange-dim:rgba(240,120,32,.08);
+}
+html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM Sans',sans-serif;font-size:13px;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* HEADER */
+#header{display:flex;align-items:center;gap:10px;padding:0 14px;height:44px;background:var(--bg1);border-bottom:1px solid var(--border);flex-shrink:0}
+#logo{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;letter-spacing:3px;color:var(--accent);text-shadow:0 0 20px rgba(0,200,240,.4);white-space:nowrap}
+#logo span{color:var(--text3);font-weight:400}
+#htabs{display:flex;height:100%;overflow-x:auto}
+.htab{padding:0 14px;height:100%;display:flex;align-items:center;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.htab:hover{color:var(--text2)}
+.htab.active{color:var(--text1);border-bottom-color:var(--accent)}
+#hright{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
+#live-price-el{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--text3);transition:color .3s;white-space:nowrap}
+#live-dot{width:6px;height:6px;border-radius:50%;background:#333;flex-shrink:0}
+#live-dot.on{animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+#manual-price{width:72px;background:var(--bg3);border:1px solid var(--border);color:var(--gold);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:3px;text-align:center}
+#manual-price:focus{outline:none;border-color:var(--gold)}
+#regime-badge{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:3px 8px;border-radius:3px;cursor:pointer;flex-shrink:0}
+#ny-timer{font-family:'Orbitron',monospace;font-size:10px;color:var(--text3);white-space:nowrap}
+
+/* PAGES */
+#pages{flex:1;overflow:hidden;position:relative}
+.page{display:none;height:100%;overflow-y:auto;padding:12px 14px;flex-direction:column;gap:10px}
+.page.active{display:flex}
+.page::-webkit-scrollbar{width:4px}.page::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.page-row{display:flex;gap:10px;min-height:0}
+.page-row.stretch{flex:1}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
+/* PANELS */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+.ph{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0}
+.pt{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text2);text-transform:uppercase}
+.psub{font-size:10px;color:var(--text3);margin-left:auto}
+.pb{padding:10px 12px}
+.pscroll{overflow-y:auto;flex:1}
+
+/* KPI */
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;text-align:center}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--border))}
+.kl{font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:3px}
+.kv{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;line-height:1}
+.kv.lg{font-size:26px;font-weight:900}
+.ks{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* COMMENT BLOCKS */
+.cmt-block{border-radius:6px;border:1px solid;padding:12px 14px;font-size:11px;line-height:1.9}
+.cmt-block.he{background:rgba(0,200,240,.05);border-color:rgba(0,200,240,.25)}
+.cmt-block.he .cmt-label{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cmt-block.he .cmt-label::before{content:'▶';color:var(--accent)}
+.cmt-block.warn{background:var(--red-dim);border-color:rgba(240,48,80,.3)}
+.cmt-block.gold{background:var(--gold-dim);border-color:rgba(232,160,0,.3)}
+.cmt-block.green{background:var(--green-dim);border-color:rgba(0,232,122,.3)}
+
+/* SCENARIO BARS */
+.sb-wrap{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.sb-label{font-size:9px;font-family:'Share Tech Mono',monospace;width:44px;text-align:right}
+.sb-track{flex:1;background:var(--bg3);border-radius:3px;height:5px;overflow:hidden}
+.sb-fill{height:100%;border-radius:3px;transition:width .6s}
+.sb-pct{font-family:'Orbitron',monospace;font-size:10px;width:30px}
+.sb-txt{font-size:11px;color:var(--text2);line-height:1.7;padding:3px 0 8px 52px}
+
+/* LEVELS */
+.lv-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.lv-row:last-child{border:none}
+.lv-row.is-spot{background:rgba(0,200,240,.06);border-radius:3px;padding:4px 6px;border:none;margin:2px 0}
+.lv-tag{font-family:'Orbitron',monospace;font-size:7px;font-weight:700;padding:2px 4px;border-radius:2px;min-width:22px;text-align:center}
+.lv-tag.R{background:rgba(240,48,80,.2);color:var(--red)}
+.lv-tag.S{background:rgba(0,232,122,.2);color:var(--green)}
+.lv-tag.P{background:rgba(0,200,240,.2);color:var(--accent)}
+.lv-tag.N{background:rgba(232,160,0,.2);color:var(--gold)}
+.lv-price{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;min-width:50px}
+.lv-name{color:var(--text2);flex:1;font-size:11px}
+.lv-dist{font-family:'Share Tech Mono',monospace;font-size:10px;margin-left:auto;white-space:nowrap}
+
+/* ABLOCK */
+.ablock{padding:10px;border-radius:4px;font-size:11px;line-height:1.8;border-left:3px solid var(--border)}
+.ablock.red{background:var(--red-dim);border-color:var(--red)}
+.ablock.green{background:var(--green-dim);border-color:var(--green)}
+.ablock.gold{background:var(--gold-dim);border-color:var(--gold)}
+.ablock.accent{background:var(--accent-dim);border-color:var(--accent)}
+.ablock.orange{background:var(--orange-dim);border-color:var(--orange)}
+
+/* OPTION CARDS */
+.opt-card{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px;margin-bottom:8px}
+.opt-card.near{border-left:3px solid var(--accent)}
+.opt-card.over{border-left:3px solid var(--gold)}
+.opt-card.avoid{border-left:3px solid var(--red);opacity:.75}
+.opt-title{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;margin-bottom:5px}
+.opt-stars{color:var(--gold);font-size:11px}
+.opt-detail{font-size:11px;color:var(--text2);line-height:1.85}
+.opt-badge{display:inline-block;font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 7px;border-radius:10px;margin-right:4px}
+.opt-badge.near-b{background:var(--accent-dim);color:var(--accent)}
+.opt-badge.over-b{background:var(--gold-dim);color:var(--gold)}
+
+/* CHECKLIST */
+.chk-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;cursor:pointer;margin-bottom:4px;border:1px solid var(--border);transition:all .2s}
+.chk-item:hover{border-color:var(--border2)}
+.chk-item.checked{background:var(--green-dim);border-color:rgba(0,232,122,.3)}
+.chk-item.checked .chk-dot{background:var(--green)}
+.chk-dot{width:12px;height:12px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);flex-shrink:0;transition:background .2s}
+.chk-text{font-size:11px;color:var(--text2)}
+
+/* RULE PILLS */
+.rule-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:10px;font-size:10px;font-family:'Share Tech Mono',monospace;background:var(--bg3);border:1px solid var(--border)}
+.rule-pill.ok{background:var(--green-dim);border-color:rgba(0,232,122,.3);color:var(--green)}
+.rule-pill.ko{background:var(--red-dim);border-color:rgba(240,48,80,.3);color:var(--red)}
+
+/* INPUTS */
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text1);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.fl{font-size:9px;color:var(--text3);display:block;margin-bottom:3px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;text-transform:uppercase}
+.fg{display:flex;flex-direction:column}
+.btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:4px;cursor:pointer;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;transition:all .2s;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.green{border-color:var(--green);color:var(--green)}
+.btn.red{border-color:var(--red);color:var(--red)}
+.btn.sm{padding:3px 8px;font-size:9px}
+
+/* CANVASES */
+#price-map-wrap{flex:1;min-height:380px;position:relative;background:#04070b;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+#niveaux-wrap{position:relative;background:#04070b;overflow:hidden}
+#gex-bar-wrap{height:180px;background:#04070b;border-radius:4px;overflow:hidden}
+
+/* TRADE TABLE */
+.trade-row{display:grid;grid-template-columns:64px 70px 50px 60px 60px 65px 1fr 60px;gap:6px;align-items:center;padding:5px 12px;border-bottom:1px solid var(--border);font-size:11px}
+.trade-row:hover{background:var(--bg3)}
+.badge{padding:2px 6px;border-radius:10px;font-size:9px;font-family:'Share Tech Mono',monospace}
+.badge.w{background:var(--green-dim);color:var(--green)}
+.badge.l{background:var(--red-dim);color:var(--red)}
+.badge.viol{background:rgba(240,120,32,.15);color:var(--orange)}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.page.active>*{animation:fadeIn .2s ease both}
+.page.active>*:nth-child(2){animation-delay:.03s}
+.page.active>*:nth-child(3){animation-delay:.06s}
+.page.active>*:nth-child(4){animation-delay:.09s}
+.page.active>*:nth-child(5){animation-delay:.12s}
+@keyframes blink2{0%,100%{opacity:1}50%{opacity:.15}}
+.live-flash{animation:blink2 .5s ease}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ HEADER ══ -->
+<div id="header">
+  <div id="logo">HUNTER<span>EYE</span></div>
+  <div id="htabs">
+    <div class="htab active" data-tab="situation">⬡ Situation</div>
+    <div class="htab" data-tab="chart">◎ Niveaux</div>
+    <div class="htab" data-tab="options">◈ Options 0DTE</div>
+    <div class="htab" data-tab="futures">◉ Futures</div>
+    <div class="htab" data-tab="dealer">◆ Dealer / GEX</div>
+    <div class="htab" data-tab="journal">● Journal</div>
+  </div>
+  <div id="hright">
+    <span id="ny-timer">—</span>
+    <span style="color:var(--border)">|</span>
+    <span id="live-price-el">ES —</span>
+    <span id="live-dot"></span>
+    <span id="live-refresh" style="cursor:pointer;color:var(--text3);font-size:12px" title="Refresh" onclick="doFetch()">⟳</span>
+    <span style="color:var(--border)">|</span>
+    <input type="number" id="manual-price" step="0.25" placeholder="Manuel">
+    <div id="regime-badge">—</div>
+  </div>
+</div>
+
+<div id="pages">
+
+<!-- ══════════════════════════════════════════
+     PAGE 1 — SITUATION
+══════════════════════════════════════════ -->
+<div class="page active" id="page-situation">
+
+  <!-- KPI Row -->
+  <div style="display:grid;grid-template-columns:220px 1fr 1fr 1fr 1fr 1fr 1fr;gap:8px">
+    <div class="kpi" style="--kc:var(--accent);text-align:left;padding:12px 14px">
+      <div class="kl">ES SPOT LIVE</div>
+      <div class="kv lg" id="s-spot" style="color:var(--accent)">—</div>
+      <div id="s-spot-sub" class="ks" style="font-size:10px;margin-top:4px;line-height:1.5">—</div>
+    </div>
+    <div class="kpi" style="--kc:var(--orange)">
+      <div class="kl">FLIP</div>
+      <div class="kv" id="s-flip" style="color:var(--orange)">—</div>
+      <div class="ks" id="s-flip-dist">—</div>
+    </div>
+    <div class="kpi" style="--kc:var(--gold)">
+      <div class="kl">STRADDLE</div>
+      <div class="kv" id="s-straddle" style="color:var(--gold)">—</div>
+      <div class="ks" id="s-straddle-range">—</div>
+    </div>
+    <div class="kpi" style="--kc:var(--red)">
+      <div class="kl">CALLS WALL</div>
+      <div class="kv" id="s-cwall" style="color:var(--red)">—</div>
+      <div class="ks" id="s-cwall-dist">—</div>
+    </div>
+    <div class="kpi" style="--kc:var(--green)">
+      <div class="kl">PUTS WALL</div>
+      <div class="kv" id="s-pwall" style="color:var(--green)">—</div>
+      <div class="ks" id="s-pwall-dist">—</div>
+    </div>
+    <div class="kpi" style="--kc:var(--purple)">
+      <div class="kl">VIX</div>
+      <div class="kv" id="s-vix" style="color:var(--purple)">—</div>
+      <div class="ks" id="s-vix-sub">—</div>
+    </div>
+    <div class="kpi" style="--kc:var(--text3)">
+      <div class="kl">P/C RATIO</div>
+      <div class="kv" id="s-pcr" style="color:var(--text2)">—</div>
+      <div class="ks" id="s-pcr-sub">—</div>
+    </div>
+  </div>
+
+  <!-- Main 3-column layout -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 280px;gap:10px;flex:1;min-height:0">
+
+    <!-- Col 1: Analyse + scenarios + checklist -->
+    <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+
+      <div class="panel" style="flex:1">
+        <div class="ph"><span class="pt">Analyse du jour</span><span class="psub" id="s-date">—</span></div>
+        <div class="pb pscroll" id="s-context" style="font-size:11px;line-height:1.9;color:var(--text2);min-height:180px">—</div>
+      </div>
+
+      <!-- HunterEye comment -->
+      <div id="sit-comment" class="cmt-block he">
+        <div class="cmt-label">HUNTEREYE — LECTURE EN TEMPS RÉEL</div>
+        <div id="sit-comment-body" style="color:var(--text2)">—</div>
+      </div>
+
+      <!-- Pre-trade checklist -->
+      <div class="panel">
+        <div class="ph"><span class="pt">Checklist pré-trade</span><span id="chk-score" class="psub">0/5</span></div>
+        <div class="pb" id="chk-list">
+          <div class="chk-item" onclick="toggleChk(this)"><div class="chk-dot"></div><span class="chk-text">Suis-je dans ma fenêtre horaire ? (London open, NY open, éviter lunch 12h30-13h30 ET)</span></div>
+          <div class="chk-item" onclick="toggleChk(this)"><div class="chk-dot"></div><span class="chk-text">Le setup est-il proche d'un niveau dealer (flip, calls/puts wall, straddle borne) ?</span></div>
+          <div class="chk-item" onclick="toggleChk(this)"><div class="chk-dot"></div><span class="chk-text">Le carnet confirme-t-il ? (stacking ask/bid visible, absorption)</span></div>
+          <div class="chk-item" onclick="toggleChk(this)"><div class="chk-dot"></div><span class="chk-text">Mon stop est fixé à 3.5pts max AVANT d'entrer</span></div>
+          <div class="chk-item" onclick="toggleChk(this)"><div class="chk-dot"></div><span class="chk-text">C'est mon max 2 scalps pour la journée ? (si oui, ne pas entrer)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 2: Scenarios + confluences + macro -->
+    <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+
+      <div class="panel">
+        <div class="ph"><span class="pt">Scénarios</span><span class="psub" id="s-bias-summary">—</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div class="sb-wrap">
+              <span class="sb-label" style="color:var(--green)">BULL</span>
+              <div class="sb-track"><div class="sb-fill" id="bar-bull" style="background:var(--green)"></div></div>
+              <span class="sb-pct" id="pct-bull" style="color:var(--green)">—</span>
+            </div>
+            <div id="txt-bull" class="sb-txt">—</div>
+          </div>
+          <div>
+            <div class="sb-wrap">
+              <span class="sb-label" style="color:var(--red)">BEAR</span>
+              <div class="sb-track"><div class="sb-fill" id="bar-bear" style="background:var(--red)"></div></div>
+              <span class="sb-pct" id="pct-bear" style="color:var(--red)">—</span>
+            </div>
+            <div id="txt-bear" class="sb-txt">—</div>
+          </div>
+          <div>
+            <div class="sb-wrap">
+              <span class="sb-label" style="color:var(--text3)">RANGE</span>
+              <div class="sb-track"><div class="sb-fill" id="bar-range" style="background:var(--text3)"></div></div>
+              <span class="sb-pct" id="pct-range" style="color:var(--text3)">—</span>
+            </div>
+            <div id="txt-range" class="sb-txt">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confluence zones -->
+      <div class="panel">
+        <div class="ph"><span class="pt">Zones de confluence</span><span class="psub">Auto-calculé</span></div>
+        <div class="pb pscroll" id="s-confluences" style="max-height:120px;font-size:11px;color:var(--text2);line-height:1.9">—</div>
+      </div>
+
+      <!-- Sessions recap -->
+      <div class="panel" style="flex:1">
+        <div class="ph"><span class="pt">Sessions</span></div>
+        <div class="pb" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:4px">
+            <div style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:4px">ASIA</div>
+            <div id="sess-asia-h" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--text2)">—</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">HOD / LOD</div>
+            <div id="sess-asia-l" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--text2)">—</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:4px">
+            <div style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:4px">LONDON</div>
+            <div id="sess-lon-h" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--red)">—</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">HOD / LOD</div>
+            <div id="sess-lon-l" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--green)">—</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--bg3);border-radius:4px">
+            <div style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:4px">NY</div>
+            <div id="sess-ny-h" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--red)">—</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">HOD / LOD</div>
+            <div id="sess-ny-l" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--green)">—</div>
+          </div>
+        </div>
+        <div style="padding:8px 12px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;border-top:1px solid var(--border);margin-top:4px">
+          <div class="fg"><label class="fl">Asia H</label><input type="number" id="si-ah" step="0.25" oninput="updateSessions()"></div>
+          <div class="fg"><label class="fl">Asia L</label><input type="number" id="si-al" step="0.25" oninput="updateSessions()"></div>
+          <div class="fg"><label class="fl">Lon H</label><input type="number" id="si-lh" step="0.25" oninput="updateSessions()"></div>
+          <div class="fg"><label class="fl">Lon L</label><input type="number" id="si-ll" step="0.25" oninput="updateSessions()"></div>
+          <div class="fg"><label class="fl">NY H</label><input type="number" id="si-nyh" step="0.25" oninput="updateSessions()"></div>
+          <div class="fg"><label class="fl">NY L</label><input type="number" id="si-nyl" step="0.25" oninput="updateSessions()"></div>
+        </div>
+
+      </div>
+
+      <div class="panel">
+        <div class="ph"><span class="pt">DOM — Carnet d'ordres</span><span class="psub" id="dom-time">—</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div class="fg"><label class="fl">Ask Wall (prix)</label><input type="number" id="dom-ask" step="0.25" oninput="updateDOM()"></div>
+            <div class="fg"><label class="fl">Taille ask</label><input type="number" id="dom-ask-size" placeholder="ex: 1100" oninput="updateDOM()"></div>
+            <div class="fg"><label class="fl">Bid Stack (prix)</label><input type="number" id="dom-bid" step="0.25" oninput="updateDOM()"></div>
+            <div class="fg"><label class="fl">Taille bid</label><input type="number" id="dom-bid-size" placeholder="ex: 500" oninput="updateDOM()"></div>
+          </div>
+          <div class="fg"><label class="fl">Observation</label>
+            <input id="dom-note" placeholder="Ex: absorption bid 6750, sellers épuisés à 6780...">
+          </div>
+          <div id="dom-analysis" class="ablock accent" style="font-size:11px;line-height:1.8">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 3: Niveaux clés sidebar -->
+    <div class="panel" style="min-height:0">
+      <div class="ph"><span class="pt">Niveaux clés</span><button class="btn sm" onclick="showTab('chart')" style="margin-left:auto">+ Editer</button></div>
+      <div id="s-levels" class="pscroll" style="padding:6px 10px;flex:1"></div>
+    </div>
+  </div>
+
+</div><!-- end page-situation -->
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 — NIVEAUX / PRICE MAP
+══════════════════════════════════════════ -->
+<div class="page" id="page-chart" style="flex-direction:row;gap:10px;padding:10px 12px">
+
+  <!-- Left: Price Map -->
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3)">PRICE MAP ES</span>
+      <select id="pm-range" style="width:80px" onchange="drawPriceMap()">
+        <option value="100">±50 pts</option>
+        <option value="200" selected>±100 pts</option>
+        <option value="400">±200 pts</option>
+        <option value="600">±300 pts</option>
+      </select>
+      <button class="btn sm" onclick="drawPriceMap()">↺ Refresh</button>
+      <span id="pm-cursor" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-left:auto"></span>
+    </div>
+    <div id="price-map-wrap"><canvas id="price-map-canvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas></div>
+
+    <!-- HunterEye chart comment -->
+    <div id="chart-comment" class="cmt-block he" style="flex-shrink:0">
+      <div class="cmt-label">HUNTEREYE — LECTURE NIVEAUX</div>
+      <div id="chart-comment-body" style="color:var(--text2)">—</div>
+    </div>
+  </div>
+
+  <!-- Right: Niveaux chart + custom levels + level details -->
+  <div style="width:310px;display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+    <div class="panel" style="flex:1;min-height:0">
+      <div class="ph">
+        <span class="pt">Niveaux chart</span>
+        <button class="btn sm" onclick="drawNiveauxChart()" style="margin-left:auto">↺</button>
+      </div>
+      <div id="niveaux-wrap" style="flex:1;min-height:200px">
+        <canvas id="niveaux-canvas" style="display:block"></canvas>
+      </div>
+    </div>
+
+    <!-- Level descriptions -->
+    <div class="panel">
+      <div class="ph"><span class="pt">Signification des niveaux</span></div>
+      <div class="pb pscroll" id="level-descriptions" style="max-height:150px;font-size:11px;line-height:1.8;color:var(--text2)">—</div>
+    </div>
+
+    <!-- Custom levels -->
+    <div class="panel">
+      <div class="ph"><span class="pt">Niveaux custom</span><button class="btn sm green" onclick="addCustomLevel()" style="margin-left:auto">+</button></div>
+      <div id="custom-levels-list" class="pscroll" style="max-height:120px"></div>
+      <div style="padding:8px;display:grid;grid-template-columns:1fr 60px 90px 30px;gap:5px">
+        <input id="cl-name" placeholder="Nom niveau" style="font-size:11px">
+        <input id="cl-price" type="number" placeholder="Prix" step="0.25" style="font-size:11px">
+        <select id="cl-type" style="font-size:11px">
+          <option value="R">Résistance</option>
+          <option value="S">Support</option>
+          <option value="P">Pivot</option>
+          <option value="N">Note</option>
+        </select>
+        <button class="btn sm green" onclick="addCustomLevel()">+</button>
+      </div>
+    </div>
+  </div>
+</div><!-- end page-chart -->
+
+<!-- ══════════════════════════════════════════
+     PAGE 3 — OPTIONS 0DTE
+══════════════════════════════════════════ -->
+<div class="page" id="page-options">
+
+  <!-- Inputs + signal bar -->
+  <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start">
+    <div class="panel">
+      <div class="ph"><span class="pt">Paramètres session</span><span class="psub" id="opt-regime-label">—</span></div>
+      <div class="pb" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+        <div class="fg"><label class="fl">Spot ES</label><input type="number" id="opt-spot" step="0.25" oninput="updateOptions()"></div>
+        <div class="fg"><label class="fl">Flip</label><input type="number" id="opt-flip" step="0.25" oninput="updateOptions()"></div>
+        <div class="fg"><label class="fl">Straddle $</label><input type="number" id="opt-straddle" step="0.1" oninput="updateOptions()"></div>
+        <div class="fg"><label class="fl">Borne ↑</label><input type="number" id="opt-upper" readonly style="color:var(--red)"></div>
+        <div class="fg"><label class="fl">Borne ↓</label><input type="number" id="opt-lower" readonly style="color:var(--green)"></div>
+        <div class="fg"><label class="fl">VIX</label><input type="number" id="opt-vix" step="0.1" oninput="updateOptions()"></div>
+        <div class="fg"><label class="fl">VPOC</label><input type="number" id="opt-vpoc" step="0.25" oninput="updateOptions()"></div>
+      </div>
+    </div>
+    <!-- Theta / time warning -->
+    <div class="panel" style="min-width:180px">
+      <div class="ph"><span class="pt">Temps restant</span></div>
+      <div class="pb" style="text-align:center">
+        <div id="opt-time-bar" style="font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--gold)">—</div>
+        <div id="opt-time-sub" style="font-size:10px;color:var(--text3);margin-top:4px">avant 16h ET</div>
+        <div id="opt-theta-warn" style="font-size:10px;margin-top:6px;line-height:1.6">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signal bar -->
+  <div id="opt-signal-bar" style="padding:10px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);font-family:'Share Tech Mono',monospace;font-size:11px">
+    <div id="opt-signal" style="color:var(--text3)">— Renseigne les paramètres —</div>
+  </div>
+
+  <!-- Near vs Over -->
+  <div class="g2" style="flex:1">
+    <div class="panel">
+      <div class="ph">
+        <span class="opt-badge near-b">NEAR</span>
+        <span class="pt">Dans la borne · Mean reversion</span>
+        <span class="psub" id="near-zone">—</span>
+      </div>
+      <div class="pscroll pb" id="near-setups"></div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <span class="opt-badge over-b">OVER</span>
+        <span class="pt">Break borne · Momentum</span>
+        <span class="psub" id="over-zone">—</span>
+      </div>
+      <div class="pscroll pb" id="over-setups"></div>
+    </div>
+  </div>
+
+  <!-- Bottom row: avoid + greeks + HunterEye comment -->
+  <div class="g3">
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--red)">⚠ À éviter</span></div>
+      <div class="pb" id="opt-avoid" style="display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Grecs secondaires</span></div>
+      <div class="pb" id="opt-greeks"></div>
+    </div>
+    <div class="cmt-block he" style="border-radius:6px">
+      <div class="cmt-label">HUNTEREYE — OPTIONS</div>
+      <div id="opt-comment-body" style="color:var(--text2);font-size:11px;line-height:1.9">—</div>
+    </div>
+  </div>
+
+  <!-- 0DTE Rules -->
+  <div class="panel">
+    <div class="ph"><span class="pt">Règles 0DTE — Non négociables</span></div>
+    <div class="pb" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div class="ablock accent" style="font-size:10px;text-align:center;padding:8px"><strong style="color:var(--accent);display:block;font-size:12px">Max 2</strong>scalps/jour</div>
+      <div class="ablock red" style="font-size:10px;text-align:center;padding:8px"><strong style="color:var(--red);display:block;font-size:12px">Stop 3.5pts</strong>ES · no exception</div>
+      <div class="ablock gold" style="font-size:10px;text-align:center;padding:8px"><strong style="color:var(--gold);display:block;font-size:12px">Near/Over</strong>straddle seulement</div>
+      <div class="ablock orange" style="font-size:10px;text-align:center;padding:8px"><strong style="color:var(--orange);display:block;font-size:12px">Pas de lunch</strong>12h30-13h30 ET</div>
+    </div>
+  </div>
+
+</div><!-- end page-options -->
+
+<!-- ══════════════════════════════════════════
+     PAGE 4 — FUTURES
+══════════════════════════════════════════ -->
+<div class="page" id="page-futures">
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+    <div class="kpi" style="--kc:var(--gold)"><div class="kl">VPOC DAILY</div><div class="kv" id="f-vpoc-d" style="color:var(--gold)">—</div></div>
+    <div class="kpi" style="--kc:var(--gold)"><div class="kl">VPOC WEEKLY</div><div class="kv" id="f-vpoc-w" style="color:var(--gold)">—</div></div>
+    <div class="kpi" style="--kc:var(--red)"><div class="kl">VAH</div><div class="kv" id="f-vah" style="color:var(--red)">—</div></div>
+    <div class="kpi" style="--kc:var(--green)"><div class="kl">VAL</div><div class="kv" id="f-val" style="color:var(--green)">—</div></div>
+    <div class="kpi" style="--kc:var(--accent)"><div class="kl">IB RANGE</div><div class="kv" id="f-ib-range" style="color:var(--accent);font-size:13px">—</div></div>
+    <div class="kpi" style="--kc:var(--purple)"><div class="kl">TYPE JOUR</div><div class="kv" id="f-day-type" style="color:var(--purple);font-size:12px">—</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:220px 320px 1fr;gap:10px;flex:1;min-height:0">
+
+    <!-- VP / TPO -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel">
+        <div class="ph"><span class="pt">Volume Profile</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:7px">
+          <div class="g2">
+            <div class="fg"><label class="fl">VPOC Daily</label><input type="number" id="fi-vpoc-d" step="0.25" oninput="updateFutures()"></div>
+            <div class="fg"><label class="fl">VPOC Weekly</label><input type="number" id="fi-vpoc-w" step="0.25" oninput="updateFutures()"></div>
+            <div class="fg"><label class="fl">VAH</label><input type="number" id="fi-vah" step="0.25" oninput="updateFutures()"></div>
+            <div class="fg"><label class="fl">VAL</label><input type="number" id="fi-val" step="0.25" oninput="updateFutures()"></div>
+          </div>
+          <div class="fg"><label class="fl">Notes Singles / Déséquilibres</label><textarea id="fi-tpo-notes" rows="9" placeholder="Singles créés, zones sans volume, structure déséquilibrée..."></textarea></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="pt">Initial Balance & Extensions</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:7px">
+          <div class="g2">
+            <div class="fg"><label class="fl">IB High</label><input type="number" id="fi-ibh" step="0.25" oninput="updateIB()"></div>
+            <div class="fg"><label class="fl">IB Low</label><input type="number" id="fi-ibl" step="0.25" oninput="updateIB()"></div>
+          </div>
+          <div id="ib-extensions" class="ablock accent" style="font-size:11px;line-height:1.9">—</div>
+        </div>
+      </div>
+
+      <!-- Sessions HOD/LOD -->
+      <div class="panel" style="flex:1">
+        <div class="ph"><span class="pt">Sessions HOD / LOD</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+            <div class="fg"><label class="fl">Asia HOD</label><input type="number" id="si-ah" step="0.25" oninput="updateSessions()"></div>
+            <div class="fg"><label class="fl">Asia LOD</label><input type="number" id="si-al" step="0.25" oninput="updateSessions()"></div>
+            <div class="fg"><label class="fl">London HOD</label><input type="number" id="si-lh" step="0.25" oninput="updateSessions()"></div>
+            <div class="fg"><label class="fl">London LOD</label><input type="number" id="si-ll" step="0.25" oninput="updateSessions()"></div>
+            <div class="fg"><label class="fl">NY HOD</label><input type="number" id="si-nyh" step="0.25" oninput="updateSessions()"></div>
+            <div class="fg"><label class="fl">NY LOD</label><input type="number" id="si-nyl" step="0.25" oninput="updateSessions()"></div>
+          </div>
+          <div id="f-sessions-recap" style="font-size:11px;line-height:1.8;color:var(--text2)">—</div>
+        </div>
+      </div>
+
+      <!-- Niveaux clés rapides -->
+      <div class="panel">
+        <div class="ph"><span class="pt">Niveaux clés</span></div>
+        <div class="pb" id="f-key-levels" style="font-size:11px;line-height:2;color:var(--text2)">—</div>
+      </div>
+    </div>
+
+    <!-- COT + Roll + Day Type -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel">
+        <div class="ph"><span class="pt">COT Report</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:7px">
+          <div class="g2">
+            <div class="fg"><label class="fl">Comm. Long</label><input type="number" id="fi-comm-l" oninput="updateCOT()"></div>
+            <div class="fg"><label class="fl">Comm. Short</label><input type="number" id="fi-comm-s" oninput="updateCOT()"></div>
+            <div class="fg"><label class="fl">Non-Comm L</label><input type="number" id="fi-nc-l" oninput="updateCOT()"></div>
+            <div class="fg"><label class="fl">Non-Comm S</label><input type="number" id="fi-nc-s" oninput="updateCOT()"></div>
+          </div>
+          <div id="cot-analysis" class="ablock accent" style="font-size:11px;line-height:1.8">—</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="pt">Roll Futures</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+            <div class="fg"><label class="fl">Front</label><input type="number" id="fi-roll-front" step="0.25" oninput="updateRoll()"></div>
+            <div class="fg"><label class="fl">Back</label><input type="number" id="fi-roll-back" step="0.25" oninput="updateRoll()"></div>
+            <div class="fg"><label class="fl">Jours</label><input type="number" id="fi-roll-days" oninput="updateRoll()"></div>
+            <div class="fg"><label class="fl">Fair Val.</label><input type="number" id="fi-roll-fv" readonly style="color:var(--accent)"></div>
+          </div>
+          <div id="roll-display" style="font-size:11px;color:var(--text2)">—</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="pt">Type de jour</span></div>
+        <div class="pb">
+          <select id="fi-day-type" onchange="updateFutures()" style="margin-bottom:8px">
+            <option value="">Indéfini</option>
+            <option value="Normal">Normal Day</option>
+            <option value="Trend">Trend Day</option>
+            <option value="Double Distribution">Double Distribution</option>
+            <option value="Neutral">Neutral Day</option>
+            <option value="Outside">Outside Day</option>
+          </select>
+          <div id="day-type-desc" class="ablock accent" style="font-size:11px;line-height:1.8">—</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+    <!-- Setups + HunterEye — col 3 -->
+      <div class="panel" style="flex:1">
+        <div class="ph"><span class="pt">Setups Futures — Régime actuel</span></div>
+        <div class="pb pscroll" id="f-setups" style="font-size:11px;line-height:1.9;color:var(--text2)">—</div>
+      </div>
+      <div id="futures-comment" class="cmt-block he">
+        <div class="cmt-label">HUNTEREYE — FUTURES</div>
+        <div id="futures-comment-body" style="color:var(--text2);font-size:11px;line-height:1.9">—</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end page-futures -->
+
+<!-- ══════════════════════════════════════════
+     PAGE 5 — DEALER / GEX
+══════════════════════════════════════════ -->
+<div class="page" id="page-dealer">
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+    <div class="kpi" style="--kc:var(--orange)"><div class="kl">GAMMA FLIP</div><div class="kv" id="d-flip" style="color:var(--orange)">—</div><div class="ks" id="d-flip-pos">—</div></div>
+    <div class="kpi" style="--kc:var(--red)"><div class="kl">CALLS WALL</div><div class="kv" id="d-cwall" style="color:var(--red)">—</div></div>
+    <div class="kpi" style="--kc:var(--green)"><div class="kl">PUTS WALL</div><div class="kv" id="d-pwall" style="color:var(--green)">—</div></div>
+    <div class="kpi" style="--kc:var(--gold)"><div class="kl">STRADDLE</div><div class="kv" id="d-straddle" style="color:var(--gold)">—</div></div>
+    <div class="kpi" style="--kc:var(--accent)"><div class="kl">RANGE STRADDLE</div><div class="kv" id="d-str-range" style="color:var(--accent);font-size:13px">—</div></div>
+    <div class="kpi" style="--kc:var(--purple)"><div class="kl">P/C RATIO</div><div class="kv" id="d-pcr" style="color:var(--purple)">—</div><div class="ks" id="d-pcr-sub">—</div></div>
+    <div class="kpi" style="--kc:var(--text3)"><div class="kl">CHARM EFFET</div><div class="kv" id="d-charm-kpi" style="font-size:12px">—</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:280px 1fr 700px;gap:10px;flex:1;min-height:0">
+
+    <!-- Saisie -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel">
+        <div class="ph"><span class="pt">Saisie GEX / VolSignals</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:7px">
+          <div class="g2">
+            <div class="fg"><label class="fl">Gamma Flip</label><input type="number" id="di-flip" step="0.25" oninput="updateDealer()"></div>
+            <div class="fg"><label class="fl">Calls Wall</label><input type="number" id="di-cwall" step="0.25" oninput="updateDealer()"></div>
+            <div class="fg"><label class="fl">Puts Wall</label><input type="number" id="di-pwall" step="0.25" oninput="updateDealer()"></div>
+            <div class="fg"><label class="fl">Straddle $</label><input type="number" id="di-straddle" step="0.1" oninput="updateDealer()"></div>
+            <div class="fg"><label class="fl">VIX</label><input type="number" id="di-vix" step="0.1" oninput="updateDealer()"></div>
+            <div class="fg"><label class="fl">P/C Ratio</label><input type="number" id="di-pcr" step="0.01" oninput="updateDealer()"></div>
+          </div>
+          <div class="fg"><label class="fl">Régime gamma</label>
+            <select id="di-regime" onchange="updateDealer()">
+              <option value="gneg">Gamma Négatif (sous flip)</option>
+              <option value="transition">Transition (proche flip)</option>
+              <option value="gpos">Gamma Positif (au-dessus flip)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charm saisie -->
+      <div class="panel">
+        <div class="ph"><span class="pt">Charm — VolSignals</span></div>
+        <div class="pb" style="display:flex;flex-direction:column;gap:8px">
+          <div class="fg"><label class="fl">Schéma couleur</label>
+            <select id="di-charm-scheme" onchange="updateDealer()">
+              <option value="blue-yellow">Blue/Yellow</option>
+              <option value="green-red">Green/Red</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Couleur dominante actuelle</label>
+            <select id="di-charm-color" onchange="updateDealer()">
+              <option value="blue">Bleu</option>
+              <option value="yellow">Jaune</option>
+              <option value="green">Vert</option>
+              <option value="red">Rouge</option>
+              <option value="neutral">Neutre / Mixte</option>
+            </select>
+          </div>
+          <div id="charm-display"></div>
+        </div>
+      </div>
+
+      <!-- Vanna -->
+      <div class="panel">
+        <div class="ph"><span class="pt">Vanna</span></div>
+        <div class="pb">
+          <div class="fg" style="margin-bottom:8px"><label class="fl">Direction</label>
+            <select id="di-vanna" onchange="updateDealer()">
+              <option value="bullish">Haussière (VIX ↓ = support calls)</option>
+              <option value="bearish">Baissière (VIX ↑ = amplifie puts)</option>
+              <option value="neutral">Neutre</option>
+            </select>
+          </div>
+          <div id="vanna-display" class="ablock accent" style="font-size:11px;line-height:1.8">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GEX visual + strikes -->
+    <!-- GEX visual + strikes — colonne 2 -->
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div class="panel" style="border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none">
+        <div class="ph"><span class="pt">Visualisation GEX — Niveaux dealer</span><button class="btn sm" onclick="setTimeout(drawGEXBars,20)" style="margin-left:auto">↺ Redraw</button></div>
+        <div class="pb" style="padding:0">
+          <div id="gex-bar-wrap" style="height:840px"><canvas id="gex-bar-canvas" style="display:block;width:100%;height:100%"></canvas></div>
+        </div>
+      </div>
+      <div class="panel" style="border-top-left-radius:0;border-top-right-radius:0">
+        <div class="ph"><span class="pt" style="font-size:10px;letter-spacing:2px">STRIKES IMPORTANTS BOOKMAP</span><button class="btn sm green" onclick="addGEXStrike()" style="margin-left:auto">+</button></div>
+        <div id="gex-strikes-list" class="pscroll" style="max-height:200px"></div>
+        <div style="padding:8px 12px;display:grid;grid-template-columns:90px 1fr auto;gap:7px">
+          <input type="number" id="gex-s-price" placeholder="Strike" step="0.25" style="font-size:11px">
+          <input id="gex-s-note" placeholder="Ex: Ask 3302 contracts SVP..." style="font-size:11px">
+          <button class="btn sm" onclick="addGEXStrike()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analyse globale + HunterEye — colonne 3 -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel" style="flex:1">
+        <div class="ph"><span class="pt">Analyse dealer globale</span></div>
+        <div class="pb pscroll" id="dealer-analysis" style="font-size:11px;line-height:1.9;color:var(--text2)">—</div>
+      </div>
+      <div id="dealer-comment" class="cmt-block he">
+        <div class="cmt-label">HUNTEREYE — DEALER</div>
+        <div id="dealer-comment-body" style="color:var(--text2);font-size:11px;line-height:1.9">—</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end page-dealer -->
+
+<!-- ══════════════════════════════════════════
+     PAGE 6 — JOURNAL
+══════════════════════════════════════════ -->
+<div class="page" id="page-journal">
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+    <!-- Log form -->
+    <div class="panel">
+      <div class="ph"><span class="pt">Logger un trade</span></div>
+      <div class="pb" style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px">
+          <div class="fg"><label class="fl">Date</label><input id="j-date" placeholder="05/03"></div>
+          <div class="fg"><label class="fl">Instrument</label>
+            <select id="j-inst"><option>ES</option><option>SPX 0DTE</option><option>SPY 0DTE</option><option>NQ</option></select>
+          </div>
+          <div class="fg"><label class="fl">Direction</label>
+            <select id="j-dir"><option>Long</option><option>Short</option></select>
+          </div>
+          <div class="fg"><label class="fl">Entrée</label><input type="number" id="j-entry" step="0.25"></div>
+          <div class="fg"><label class="fl">Sortie</label><input type="number" id="j-exit" step="0.25"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:7px">
+          <div class="fg"><label class="fl">Qté</label><input type="number" id="j-qty" value="1" min="1"></div>
+          <div class="fg"><label class="fl">Setup / Raison entrée</label><input id="j-setup" placeholder="Near straddle rejection 6884..."></div>
+          <div class="fg"><label class="fl">Règles respectées ?</label>
+            <select id="j-rules">
+              <option value="ok">✓ Toutes respectées</option>
+              <option value="lunch">✗ Lunch US</option>
+              <option value="stop">✗ Stop non respecté</option>
+              <option value="3e-trade">✗ 3e trade journée</option>
+              <option value="hors-niveau">✗ Hors niveau dealer</option>
+              <option value="other">✗ Autre violation</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Note / Analyse post-trade</label><textarea id="j-note" rows="2" placeholder="Ce que j'ai bien fait, ce que j'aurais dû faire autrement..."></textarea></div>
+        <button class="btn green" onclick="addTrade()">+ Enregistrer le trade</button>
+      </div>
+    </div>
+
+    <!-- Stats + patterns -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+        <div class="kpi" style="--kc:var(--text3)"><div class="kl">TRADES</div><div class="kv" id="j-total">0</div></div>
+        <div class="kpi" style="--kc:var(--green)"><div class="kl">WIN %</div><div class="kv" id="j-wr" style="color:var(--green)">—</div></div>
+        <div class="kpi" style="--kc:var(--accent)"><div class="kl">P&L</div><div class="kv" id="j-pnl" style="color:var(--accent)">0</div><div class="ks">pts</div></div>
+        <div class="kpi" style="--kc:var(--green)"><div class="kl">AVG WIN</div><div class="kv" id="j-aw" style="color:var(--green)">—</div></div>
+        <div class="kpi" style="--kc:var(--red)"><div class="kl">AVG LOSS</div><div class="kv" id="j-al" style="color:var(--red)">—</div></div>
+        <div class="kpi" style="--kc:var(--gold)"><div class="kl">PROF. F.</div><div class="kv" id="j-pf" style="color:var(--gold)">—</div></div>
+      </div>
+
+      <!-- Violations tracker -->
+      <div class="panel" style="flex:1">
+        <div class="ph"><span class="pt">Violations de règles</span><span class="psub" id="j-viol-count">0 violation</span></div>
+        <div class="pb" id="j-violations" style="font-size:11px;color:var(--text2);line-height:1.9">Aucune violation enregistrée.</div>
+      </div>
+
+      <!-- HunterEye coaching -->
+      <div id="journal-comment" class="cmt-block he">
+        <div class="cmt-label">HUNTEREYE — COACHING</div>
+        <div id="journal-comment-body" style="color:var(--text2);font-size:11px;line-height:1.9">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trade list -->
+  <div class="panel" style="flex:1">
+    <div class="ph">
+      <span class="pt">Historique</span>
+      <span id="j-today-count" class="psub">0 trade aujourd'hui</span>
+      <button class="btn sm red" onclick="clearTrades()" style="margin-left:8px">Vider</button>
+    </div>
+    <div style="padding:4px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:64px 70px 50px 60px 60px 65px 100px 1fr 70px;gap:6px;font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace">
+      <span>DATE</span><span>INST</span><span>DIR</span><span>ENTRÉE</span><span>SORTIE</span><span>P&L</span><span>SETUP</span><span>NOTE</span><span>RÈGLES</span>
+    </div>
+    <div id="trade-list" class="pscroll" style="max-height:220px"></div>
+  </div>
+
+</div><!-- end page-journal -->
+
+</div><!-- end #pages -->
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SESSION — SOURCE UNIQUE DE VÉRITÉ
+// ═══════════════════════════════════════════════════════════════
+var SESSION = {
+  date:'05/03/2026', spot:0, flip:6820, cwall:6895, pwall:6764,
+  straddle:21.20, vix:20, pcr:1.0,
+  regime:'gneg', // gneg | transition | gpos
+  charmScheme:'blue-yellow', charmColor:'blue', charmEffect:'suppressif',
+  vannaDir:'neutral',
+  vpoc:{d:6798,w:6820}, vah:6884, val:6774,
+  ibh:0, ibl:0, dayType:'Normal', tpoNotes:'',
+  cot:{cl:0,cs:0,nl:0,ns:0}, roll:{front:0,back:0,days:0},
+  sessions:{ah:0,al:0,lh:0,ll:0,nyh:0,nyl:0},
+  gexStrikes:[], customLevels:[], trades:[],
+  context:'', scenarios:{bull:15,bear:55,range:30,txtBull:'',txtBear:'',txtRange:''}
+};
+
+// ═══════════════════════════════════════════════════════════════
+// PROPAGATE — met TOUT à jour depuis SESSION
+// ═══════════════════════════════════════════════════════════════
+function propagate(){
+  var sp=SESSION.spot, flip=SESSION.flip, cw=SESSION.cwall, pw=SESSION.pwall;
+  var str=SESSION.straddle, vix=SESSION.vix;
+  var upper=sp?+(sp+str*.5).toFixed(2):0, lower=sp?+(sp-str*.5).toFixed(2):0;
+  var aboveFlip=sp&&flip?sp>flip:true;
+  var col=aboveFlip?'var(--green)':'var(--red)';
+
+  // ── HEADER ──
+  var rm={gneg:['GAMMA −','var(--red)','var(--red-dim)'],
+          transition:['TRANSITION','var(--gold)','var(--gold-dim)'],
+          gpos:['GAMMA +','var(--green)','var(--green-dim)']};
+  var r=rm[SESSION.regime]||rm.gneg;
+  var rb=el('regime-badge');
+  if(rb){rb.textContent=r[0];rb.style.color=r[1];rb.style.background=r[2];rb.style.border='1px solid '+r[1];}
+
+  // ── SITUATION ──
+  setText('s-spot', sp?sp.toFixed(2):'—');
+  el('s-spot')&&(el('s-spot').style.color=sp?col:'var(--accent)');
+  setText('s-spot-sub', sp&&flip?(sp>flip?'▲ Au-dessus flip '+flip+' · gamma+':'▼ Sous flip '+flip+' · gamma− actif'):'—');
+  el('s-spot-sub')&&(el('s-spot-sub').style.color=sp?col:'var(--text3)');
+  setText('s-flip', flip||'—');
+  if(sp&&flip){var fd=+(sp-flip).toFixed(1);setText('s-flip-dist',(fd>=0?'+':'')+fd+' pts');el('s-flip-dist')&&(el('s-flip-dist').style.color=fd>=0?'var(--green)':'var(--red)');}
+  setText('s-straddle',str?'$'+str.toFixed(2):'—');
+  setText('s-straddle-range',upper&&lower?lower+'  /  '+upper:'—');
+  setText('s-cwall',cw||'—');
+  if(sp&&cw){setText('s-cwall-dist','+'+(cw-sp).toFixed(1)+' pts');}
+  setText('s-pwall',pw||'—');
+  if(sp&&pw){setText('s-pwall-dist','-'+(sp-pw).toFixed(1)+' pts');}
+  setText('s-vix',vix?vix.toFixed(1):'—');
+  setText('s-vix-sub',vix?(vix<18?'Calme':vix<22?'Normal':vix<28?'Élevé':'EXTRÊME'):'—');
+  el('s-vix')&&(el('s-vix').style.color=vix<18?'var(--green)':vix<28?'var(--gold)':'var(--red)');
+  setText('s-pcr',SESSION.pcr||'—');
+  setText('s-pcr-sub',SESSION.pcr?(SESSION.pcr>1.2?'Bearish':SESSION.pcr<0.8?'Bullish':'Neutre'):'—');
+  setText('s-date',SESSION.date);
+  el('s-context')&&(el('s-context').innerHTML=SESSION.context||'—');
+
+  // Scenarios
+  var sc=SESSION.scenarios;
+  setText('pct-bull',sc.bull+'%'); el('pct-bull')&&(el('pct-bull').style.color='var(--green)');
+  setText('pct-bear',sc.bear+'%'); el('pct-bear')&&(el('pct-bear').style.color='var(--red)');
+  setText('pct-range',sc.range+'%');
+  el('bar-bull')&&(el('bar-bull').style.width=sc.bull+'%');
+  el('bar-bear')&&(el('bar-bear').style.width=sc.bear+'%');
+  el('bar-range')&&(el('bar-range').style.width=sc.range+'%');
+  el('txt-bull')&&(el('txt-bull').innerHTML=sc.txtBull||'—');
+  el('txt-bear')&&(el('txt-bear').innerHTML=sc.txtBear||'—');
+  el('txt-range')&&(el('txt-range').innerHTML=sc.txtRange||'—');
+  var dominant=sc.bear>=50?'🔴 Biais BEAR':sc.bull>=50?'🟢 Biais BULL':'⚪ Neutre/Range';
+  setText('s-bias-summary',dominant);
+
+  renderSituationLevels();
+  renderConfluences();
+  renderSituationComment();
+  updateSessions();
+
+  // ── OPTIONS ──
+  setVal('opt-spot',sp||''); setVal('opt-flip',flip||'');
+  setVal('opt-straddle',str||''); setVal('opt-vix',vix||'');
+  setVal('opt-vpoc',SESSION.vpoc.d||'');
+  updateOptions();
+
+  // ── FUTURES ──
+  setText('f-vpoc-d',SESSION.vpoc.d||'—'); setText('f-vpoc-w',SESSION.vpoc.w||'—');
+  setText('f-vah',SESSION.vah||'—'); setText('f-val',SESSION.val||'—');
+  setText('f-day-type',SESSION.dayType||'—');
+  setVal('fi-vpoc-d',SESSION.vpoc.d||''); setVal('fi-vpoc-w',SESSION.vpoc.w||'');
+  setVal('fi-vah',SESSION.vah||''); setVal('fi-val',SESSION.val||'');
+  setVal('fi-tpo-notes',SESSION.tpoNotes||'');
+  setVal('fi-day-type',SESSION.dayType||'');
+  setVal('fi-comm-l',SESSION.cot.cl||''); setVal('fi-comm-s',SESSION.cot.cs||'');
+  setVal('fi-nc-l',SESSION.cot.nl||''); setVal('fi-nc-s',SESSION.cot.ns||'');
+  setVal('fi-roll-front',SESSION.roll.front||'');
+  setVal('fi-roll-back',SESSION.roll.back||'');
+  setVal('fi-roll-days',SESSION.roll.days||'');
+  updateCOT(); updateRoll(); updateIB(); updateFutures(); renderFuturesComment();
+
+  // ── DEALER ──
+  setText('d-flip',flip||'—'); setText('d-cwall',cw||'—'); setText('d-pwall',pw||'—');
+  setText('d-straddle',str?'$'+str.toFixed(2):'—');
+  setText('d-str-range',upper&&lower?lower+' / '+upper:'—');
+  setText('d-pcr',SESSION.pcr||'—');
+  setText('d-pcr-sub',SESSION.pcr?(SESSION.pcr>1.2?'Bearish':SESSION.pcr<0.8?'Bullish':'Neutre'):'—');
+  if(sp&&flip){var fp=sp>flip;setText('d-flip-pos',fp?'▲ Au-dessus':'▼ Sous le flip');el('d-flip-pos')&&(el('d-flip-pos').style.color=fp?'var(--green)':'var(--red)');}
+  setVal('di-flip',flip||''); setVal('di-cwall',cw||''); setVal('di-pwall',pw||'');
+  setVal('di-straddle',str||''); setVal('di-vix',vix||''); setVal('di-pcr',SESSION.pcr||'');
+  setVal('di-regime',SESSION.regime||'gneg');
+  setVal('di-charm-scheme',SESSION.charmScheme||'blue-yellow');
+  setVal('di-charm-color',SESSION.charmColor||'blue');
+  setVal('di-vanna',SESSION.vannaDir||'neutral');
+  renderCharm(); renderVanna(); renderDealerAnalysis(); renderDealerComment();
+  renderGEXStrikes(); drawGEXBars();
+
+  // ── JOURNAL ──
+  renderTrades(); renderJournalComment();
+  if(isActive('chart')){drawPriceMap();drawNiveauxChart();renderLevelDesc();renderCustomLevelsList();renderChartComment();}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HUNTEREYE COMMENTARY ENGINE
+// ═══════════════════════════════════════════════════════════════
+function renderSituationComment(){
+  var c=el('sit-comment-body'); if(!c) return;
+  var sp=SESSION.spot, flip=SESSION.flip, str=SESSION.straddle, charm=SESSION.charmEffect;
+  var regime=SESSION.regime, vix=SESSION.vix, vah=SESSION.vah, val=SESSION.val;
+  var vpoc=SESSION.vpoc&&SESSION.vpoc.d, sc=SESSION.scenarios||{};
+  var upper=sp&&str?+(sp+str*.5).toFixed(0):0, lower=sp&&str?+(sp-str*.5).toFixed(0):0;
+  var aboveFlip=sp>flip, aboveVah=sp>vah, aboveVal=sp>val;
+
+  var blk=function(title,col,body){
+    return '<div style="margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:4px;border-left:3px solid '+col+'">'+
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:4px">'+title+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.8">'+body+'</div></div>';
+  };
+
+  var parts=[];
+
+  // ① Position globale
+  if(sp&&flip){
+    var distFlip=(sp-flip).toFixed(0);
+    var regimeLabel=regime==='gneg'?'<strong style="color:var(--red)">GAMMA NÉGATIF</strong>':
+                    regime==='gpos'?'<strong style="color:var(--green)">GAMMA POSITIF</strong>':
+                    '<strong style="color:var(--gold)">TRANSITION GAMMA</strong>';
+    var posDesc='';
+    if(aboveFlip){
+      posDesc='Prix <strong style="color:var(--green)">+'+distFlip+' pts</strong> au-dessus du flip '+flip+'. ';
+      if(regime==='gpos') posDesc+='<strong style="color:var(--green)">Gamma positif actif</strong> — dealers achètent mécaniquement sur les dips. Mean reversion domine. Supports structurels au-dessus du flip.';
+      else posDesc+='Transition en cours — gamma s\'améliore mais pas encore positif. Un break du flip en clôture 15min = risque de rechute gamma négatif.';
+    } else {
+      posDesc='Prix <strong style="color:var(--red)">'+distFlip+' pts</strong> sous le flip '+flip+'. <strong style="color:var(--red)">Gamma négatif actif</strong> — dealers vendent en cascade lors des baisses. ATR effectif ×1.5-2×. Chaque baisse est amplifiée. Pour inverser : reclaim flip en clôture 15min.';
+    }
+    parts.push(blk('① RÉGIME GAMMA — CONTEXTE DEALER', aboveFlip?'var(--green)':'var(--red)',
+      regimeLabel+' — '+posDesc));
+  }
+
+  // ② Position vs Value Area
+  if(sp&&vah&&val){
+    var vaDesc='';
+    if(aboveVah){
+      vaDesc='Prix <strong style="color:var(--red)">au-dessus de la VAH '+vah+'</strong> — zone premium (70% du volume en dessous). Attention aux fausses sorties. Break confirmé avec volume = extension haussière. Sans volume = piège → retour VAH probable.';
+    } else if(!aboveVal){
+      vaDesc='Prix <strong style="color:var(--green)">sous la VAL '+val+'</strong> — zone discount. Support de valeur. Retour ici avec absorption = long fort. En Outside Day, la VAL est le plancher de sécurité.';
+    } else {
+      var pctVA=vah!==val?Math.round((sp-val)/(vah-val)*100):50;
+      vaDesc='Prix <strong>dans la Value Area</strong> (VAL '+val+' → VAH '+vah+'). Position : <strong>'+pctVA+'%</strong> de la VA. '+(vpoc?'VPOC '+vpoc+' = aimant gravitationnel — les sessions clôturent souvent sur ou près du VPOC.':'')+'<br>Zone de fair value : moves bidirectionnels. Éviter d\'anticiper — attendre les extrêmes.';
+    }
+    parts.push(blk('② VALUE AREA — POSITION PRIX', aboveVah?'var(--red)':!aboveVal?'var(--green)':'var(--text3)', vaDesc));
+  }
+
+  // ③ Charm + Vanna
+  if(charm){
+    var charmDesc='';
+    if(charm==='expansif'){
+      charmDesc='<strong style="color:var(--green)">CHARM EXPANSIF (Jaune)</strong> — dealers accumulent du delta LONG mécaniquement au fil du temps. Pression acheteuse structurelle croissante.<br>→ Dips 13h30-15h : pression charm maximale — support structurel renforcé PM<br>→ Ne jamais shorter agressivement après 14h ET sans catalyst fort';
+    } else if(charm==='suppressif'){
+      charmDesc='<strong style="color:var(--accent)">CHARM SUPPRESSIF (Bleu)</strong> — dealers vendent du delta mécaniquement. Pression vendeuse de fond qui s\'intensifie dans la session.<br>→ Les rallies PM sont vendus mécaniquement<br>→ Éviter les longs directionnels après 13h30';
+    } else {
+      charmDesc='Charm neutre — pas de pression directionnelle mécanique des dealers. Les flows intraday dominent.';
+    }
+    var vannaDir=SESSION.vannaDir;
+    if(vix&&vannaDir){
+      charmDesc+='<br><strong style="color:var(--purple)">VANNA VIX '+vix.toFixed(1)+'</strong> : '+(vannaDir==='bullish'?'VIX en baisse → vanna haussière. Chaque −1pt VIX booste les calls de +10-15% supplémentaire. Long calls = double bénéfice.':vannaDir==='bearish'?'VIX en hausse → vanna baissière. Chaque +1pt VIX amplifie les puts. Long puts = double levier. Éviter les long calls.':'Vanna neutre — VIX stable. Pas d\'effet directionnel additionnel.');
+    }
+    parts.push(blk('③ CHARM + VANNA — FORCES DEALER',charm==='expansif'?'var(--green)':charm==='suppressif'?'var(--accent)':'var(--text3)',charmDesc));
+  }
+
+  // ④ Straddle + pinning
+  if(str&&sp){
+    var rangeDesc='Range 0DTE actif : <strong style="color:var(--red)">'+upper+'</strong> ↑ · <strong style="color:var(--green)">'+lower+'</strong> ↓ ('+str.toFixed(2)+'$ · ~'+(str*50).toFixed(0)+' $ par contrat ES).<br>';
+    rangeDesc+='Probabilité de clôture dans le range : ~65-70%. ';
+    if(sp>upper-5) rangeDesc+='<strong style="color:var(--red)">Prix proche de la borne haute '+upper+' — pinning résistance actif.</strong> Break → momentum. Rejet → retour VPOC.';
+    else if(sp<lower+5) rangeDesc+='<strong style="color:var(--green)">Prix proche de la borne basse '+lower+' — pinning support actif.</strong> Absorption bid visible → rebond mécanique. Break → momentum baissier.';
+    else rangeDesc+='Prix dans le range. VPOC '+(vpoc||'—')+' = aimant de clôture. Moves bidirectionnels favorisés jusqu\'à test d\'une borne.';
+    parts.push(blk('④ STRADDLE $'+str.toFixed(2)+' — GAMMA PINNING','var(--gold)',rangeDesc));
+  }
+
+  // ⑤ Biais du jour + règles
+  if(sc.bull!==undefined){
+    var biaisCol=sc.bear>=50?'var(--red)':sc.bull>=50?'var(--green)':'var(--gold)';
+    var biaisDesc='<strong style="color:'+biaisCol+'">'+
+      (sc.bear>=50?'BEAR '+sc.bear+'%':sc.bull>=50?'BULL '+sc.bull+'%':'NEUTRE / RANGE')+
+      '</strong><br>';
+    if(sc.bear>=50) biaisDesc+='→ Privilégier les shorts sur rejections résistances dealer<br>→ Réduire la taille sur les longs<br>→ Target : VPOC '+(vpoc||'—')+' puis VAL '+val;
+    else if(sc.bull>=50) biaisDesc+='→ Privilégier les longs sur pullbacks niveaux dealer<br>→ Stops sous le flip '+flip+'<br>→ Target : VAH '+vah+' puis borne upper '+upper;
+    else biaisDesc+='→ Attendre test des extrêmes ('+lower+' ou '+upper+')<br>→ Éviter le mid-range<br>→ Position sizing réduite';
+    biaisDesc+='<br><strong>Règles impératives :</strong> Max 2 trades · Stop 3.5pts · Pas de trade lunch 12h30-13h30 ET · Entrées niveaux dealer uniquement';
+    parts.push(blk('⑤ BIAIS DU JOUR — PLAN D\'ACTION',biaisCol,biaisDesc));
+  }
+
+  c.innerHTML=parts.join('')||'Renseigne les paramètres pour activer l\'analyse.';
+}
+
+
+function renderChartComment(){
+  var c=el('chart-comment-body'); if(!c) return;
+  var sp=SESSION.spot, flip=SESSION.flip, vah=SESSION.vah, val=SESSION.val;
+  var vpoc=SESSION.vpoc.d, str=SESSION.straddle;
+  var parts=[];
+
+  if(sp&&flip){
+    var toFlip=Math.abs(sp-flip).toFixed(1);
+    parts.push('Distance au flip : <strong>'+toFlip+' pts</strong>. '+(sp>flip?'Au-dessus → gamma moins négatif. Support à '+flip+' en cas de pullback.':'Sous le flip → gamma négatif actif. Résistance à '+flip+' en cas de rebond.'));
+  }
+  if(vah&&val&&sp){
+    if(sp>=val&&sp<=vah) parts.push('Prix <strong style="color:var(--gold)">dans la Value Area</strong> ('+val+'-'+vah+'). Zone équilibrée — le VPOC '+vpoc+' est l\'aimant prioritaire.');
+    else if(sp>vah) parts.push('Prix <strong style="color:var(--red)">au-dessus du VAH '+vah+'</strong> — zone déséquilibrée haussière. Singles probables au-dessus → aimant pour continuation.');
+    else parts.push('Prix <strong style="color:var(--green)">sous le VAL '+val+'</strong> — zone déséquilibrée baissière. Retour VPOC '+vpoc+' = scénario probable si regain du VAL.');
+  }
+  if(str&&sp){
+    var su=+(sp+str*.5).toFixed(0), sl=+(sp-str*.5).toFixed(0);
+    parts.push('Bornes straddle : <strong style="color:var(--red)">'+su+'</strong> (upper) et <strong style="color:var(--green)">'+sl+'</strong> (lower). Les strikes à ces niveaux sont les pivots d\'expiration. Break confirmé = momentum. Rejection = mean reversion.');
+  }
+
+  // Custom levels confluence
+  var gexS=SESSION.gexStrikes.filter(function(s){return s.price&&Math.abs(s.price-(sp||0))<20;});
+  if(gexS.length) parts.push('Strikes dealers dans les 20 pts : <strong style="color:var(--orange)">'+gexS.map(function(s){return s.price+' ('+s.note+')';}).join(', ')+'</strong>. Ces niveaux créent des aimants/résistances mécaniques.');
+
+  c.innerHTML=parts.join('<br><br>')||'—';
+}
+
+function renderFuturesComment(){
+  var c=el('futures-comment-body'); if(!c) return;
+  var vpoc=SESSION.vpoc.d||6804, vah=SESSION.vah||6874, val=SESSION.val||6774, vpocW=SESSION.vpoc.w||6820;
+  var sp=SESSION.spot||6862, ibh=SESSION.ibh||6880, ibl=SESSION.ibl||6804;
+  var lhod=SESSION.sessions.lh||6895, llod=SESSION.sessions.ll||6842;
+  var nyl=SESSION.sessions.nyl||6757, nyh=SESSION.sessions.nyh||6869;
+  var flip=SESSION.flip||6819;
+  var ibRange=+(ibh-ibl).toFixed(1);
+  var blk=function(t,col,body){
+    return '<div style="margin-bottom:10px;padding:9px 11px;background:var(--bg3);border-radius:5px;border-left:3px solid '+col+'">'+
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:1.5px;color:var(--text3);margin-bottom:4px">'+t+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.85">'+body+'</div></div>';
+  };
+  var html='';
+
+  html+=blk('OUTSIDE DAY — V-SHAPE RECOVERY 05/03/26','var(--gold)',
+    '<strong style="color:var(--gold)">Journée exceptionnelle — Outside Day V-shape.</strong> Spike bas NY open à <strong style="color:var(--red)">'+nyl+'</strong> '+
+    '(chase de stops sous LOD 03/03 6716) puis recovery immédiate de <strong>+'+(nyh-nyl)+' pts</strong> jusqu\'au HOD '+nyh+'.<br><br>'+
+    '① Le spike à '+nyl+' est un faux break — les stops ont été chassés puis le prix est remonté immédiatement. Signe de demande forte en dessous.<br>'+
+    '② <strong>Singles créés</strong> entre '+nyl+' et '+val+' : zones sans volume = déséquilibres. Aimant pour combler dans les 1-3 séances (~80% prob.).<br>'+
+    '③ Structure biaisée haut : VPOC '+vpoc+' est bas dans le range actuel. Prix en zone "overvalued" par rapport à la VA.<br><br>'+
+    '<strong style="color:var(--orange)">Règle Outside Day :</strong> Pas de short dans la moitié haute. Pas de long dans la moitié basse. Entrées aux extrêmes uniquement.');
+
+  html+=blk('VOLUME PROFILE — ANALYSE DÉTAILLÉE','var(--gold)',
+    '<strong>VPOC Daily '+vpoc+'</strong> — prix du plus grand volume = aimant de clôture prioritaire. '+
+    'Distance actuelle <strong>'+(sp>vpoc?'+'+(sp-vpoc).toFixed(0):(vpoc-sp).toFixed(0))+'pts</strong>. '+(sp>vpoc?'Zone déséquilibrée haussière. Si momentum s\'épuise → retour gravitaire vers '+vpoc+' probable.':'Zone déséquilibrée baissière.')+
+    '<br><br><strong>VAH '+vah+'</strong> — 70% du volume fait EN DESSOUS. C\'est la résistance de valeur. Break avec volume = significatif, sinon fausse sortie → piège haussier.'+
+    '<br><br><strong>VAL '+val+'</strong> — 70% du volume fait AU-DESSUS. Support de valeur. Retour ici avec absorption = long fort. En Outside Day, le VAL est le plancher de "sécurité".'+
+    '<br><br><strong>VPOC Weekly '+vpocW+'</strong> — '+(vpoc>vpocW?'VPOC daily ('+vpoc+') au-dessus du weekly ('+vpocW+') → session trade au-dessus de la valeur hebdo. Haussier CT. Les vendeurs doivent passer sous '+vpocW+' pour reprendre le contrôle.':'VPOC daily sous weekly → session faible relativement à la semaine.')+
+    '<br><br><strong style="color:var(--orange)">Singles '+nyl+'-'+val+'</strong> — déséquilibre baissier à combler. Cible future (pas forcément aujourd\'hui).');
+
+  html+=blk('INITIAL BALANCE '+ibh+' / '+ibl+' — RANGE '+ibRange+' PTS','var(--accent)',
+    (ibRange>60?
+    '<strong style="color:var(--orange)">IB très large ('+ibRange+' pts)</strong> — Outside Day consomme l\'énergie dans l\'IB. Extensions PM limitées.'+
+    '<br><br>Extensions à surveiller :<br>'+
+    '→ Ext 50% haut : <strong style="color:var(--red)">'+(+(ibh+ibRange*0.5).toFixed(0))+'</strong><br>'+
+    '→ Ext 100% haut : <strong style="color:var(--red)">'+(+(ibh+ibRange).toFixed(0))+'</strong><br>'+
+    '→ Ext 50% bas : <strong style="color:var(--green)">'+(+(ibl-ibRange*0.5).toFixed(0))+'</strong><br>'+
+    '→ Ext 100% bas : <strong style="color:var(--green)">'+(+(ibl-ibRange).toFixed(0))+'</strong>'+
+    '<br><br><strong>Stat Outside Day IB large :</strong> ~65% des sessions clôturent dans l\'IB. VPOC '+vpoc+' = aimant de clôture probable.':
+    'IB normal ('+ibRange+'pts). Break de '+(ibh)+' ou '+(ibl)+' avec volume = direction confirmée.'));
+
+  html+=blk('NIVEAUX SESSIONS — CONFLUENCES','var(--purple)',
+    '<strong style="color:var(--red)">London HOD '+lhod+'</strong> — supply London active. Si retesté NY → réaction forte. Break volume = extension vers '+(+lhod+20).toFixed(0)+'.<br>'+
+    '<strong style="color:var(--green)">London LOD '+llod+'</strong> — demand London. Retour ici + charm expansif + absorption bid = long fort.<br>'+
+    '<strong style="color:var(--orange)">Yesterday Opening Supply ~6830</strong> — résistance/aimant. Surveiller reaction.<br>'+
+    '<strong style="color:var(--red)">Very High Balance Zone 6920-6935</strong> — objectif haussier si VAH '+vah+' cassé avec conviction.<br>'+
+    '<strong style="color:var(--text3)">Flip '+flip+'</strong> — pivot absolu. Tenu = transition→gpos. Cassé = gamma négatif de retour. Le flip est la frontière de tout le contexte dealer.');
+
+  html+=blk('COT — SMART MONEY POSITIONNEMENT','var(--text3)',
+    'Commercials : <strong style="color:var(--red)">−64K short net</strong> (248K L / 312K S)<br>'+
+    'Non-Comm : <strong style="color:var(--green)">+29K long net</strong> (185K L / 156K S)<br><br>'+
+    '<strong style="color:var(--orange)">⚠ Divergence Comm/NonComm</strong> — mains fortes baissières MT, spéculatifs longs CT.<br>'+
+    'Le rebond V-shape est probablement technique. Les Commercials utilisent les hausses pour renforcer leurs shorts MT.<br>'+
+    '<strong>Implication :</strong> Intraday OK pour les longs sur niveaux. Mais pas de conviction multi-jours haussière. La structure COT reste bearish sur 2-4 semaines.<br>'+
+    'Roll ESH6→ESM6 : spread +11pts. Contango normal. FV ESM6 ≈ 6870-6876.');
+
+  c.innerHTML=html;
+}
+
+function renderJournalComment(){
+  var c=el('journal-comment-body'); if(!c) return;
+  var trades=SESSION.trades;
+  var wins=trades.filter(function(t){return t.pnl>0;});
+  var losses=trades.filter(function(t){return t.pnl<0;});
+  var viols=trades.filter(function(t){return t.rules&&t.rules!=='ok';});
+  var parts=[];
+
+  if(!trades.length){
+    c.innerHTML='Aucun trade enregistré. <br>Rappel : max 2 scalps/jour, stop 3.5pts, near/over straddle uniquement.';
+    return;
+  }
+
+  // Win rate analysis
+  var wr=wins.length/trades.length;
+  if(wr>=0.6) parts.push('<strong style="color:var(--green)">Win rate solide ('+Math.round(wr*100)+'%)</strong> — les setups sont bien sélectionnés. Continue à te concentrer sur la qualité des entrées plutôt que la fréquence.');
+  else if(wr<0.4) parts.push('<strong style="color:var(--red)">Win rate faible ('+Math.round(wr*100)+'%)</strong> — revoir la sélection de setups. Es-tu bien dans ta fenêtre horaire ? Les niveaux dealers sont-ils confirmés avant l\'entrée ?');
+
+  // P&L analysis
+  var totalPnl=trades.reduce(function(s,t){return s+t.pnl;},0);
+  var avgW=wins.length?wins.reduce(function(s,t){return s+t.pnl;},0)/wins.length:0;
+  var avgL=losses.length?Math.abs(losses.reduce(function(s,t){return s+t.pnl;},0)/losses.length):0;
+  if(avgW&&avgL){
+    var rr=(avgW/avgL).toFixed(2);
+    if(+rr<4) parts.push('<strong style="color:var(--orange)">RR moyen : '+rr+'</strong> — en dessous de ta cible 4:1. Les targets sont-ils à 15pts ? Les stops sont-ils bien à 3.5pts ?');
+    else parts.push('<strong style="color:var(--green)">RR moyen : '+rr+'</strong> — conforme à ta stratégie 4:1.');
+  }
+
+  // Violations
+  if(viols.length){
+    var violTypes={};
+    viols.forEach(function(t){violTypes[t.rules]=(violTypes[t.rules]||0)+1;});
+    var violSummary=Object.keys(violTypes).map(function(k){return violTypes[k]+'× '+k;}).join(', ');
+    parts.push('<strong style="color:var(--red)">'+viols.length+' violation(s) détectée(s)</strong> : '+violSummary+'. <br>Chaque trade hors règles coûte plus que son P&L — il érode la discipline. Analyse le contexte de chaque violation.');
+  }
+
+  // Today count
+  var today=SESSION.date;
+  var todayTrades=trades.filter(function(t){return t.date===today;});
+  if(todayTrades.length>=2) parts.push('<strong style="color:var(--orange)">'+todayTrades.length+' trade(s) aujourd\'hui.</strong> '+(todayTrades.length>=2?'Tu as atteint ou dépassé ton max de 2 scalps. Clavier off.':''));
+
+  c.innerHTML=parts.join('<br><br>')||'—';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SITUATIONS — NIVEAUX & CONFLUENCES
+// ═══════════════════════════════════════════════════════════════
+function buildAllLevels(){
+  var sp=SESSION.spot;
+  var lvs=[];
+  if(SESSION.flip) lvs.push({price:SESSION.flip,name:'Gamma Flip',tag:'FLIP',type:'P'});
+  if(SESSION.cwall) lvs.push({price:SESSION.cwall,name:'Calls Wall',tag:'CW',type:'R'});
+  if(SESSION.pwall) lvs.push({price:SESSION.pwall,name:'Puts Wall',tag:'PW',type:'S'});
+  if(SESSION.straddle&&sp){
+    lvs.push({price:+(sp+SESSION.straddle*.5).toFixed(2),name:'Straddle Upper',tag:'STR',type:'R'});
+    lvs.push({price:+(sp-SESSION.straddle*.5).toFixed(2),name:'Straddle Lower',tag:'STR',type:'S'});
+  }
+  if(SESSION.vpoc.d) lvs.push({price:SESSION.vpoc.d,name:'VPOC Daily',tag:'VP',type:'N'});
+  if(SESSION.vpoc.w&&SESSION.vpoc.w!==SESSION.vpoc.d) lvs.push({price:SESSION.vpoc.w,name:'VPOC Weekly',tag:'VPW',type:'N'});
+  if(SESSION.vah) lvs.push({price:SESSION.vah,name:'VAH',tag:'VAH',type:'R'});
+  if(SESSION.val) lvs.push({price:SESSION.val,name:'VAL',tag:'VAL',type:'S'});
+  if(SESSION.ibh) lvs.push({price:SESSION.ibh,name:'IB High',tag:'IBH',type:'R'});
+  if(SESSION.ibl) lvs.push({price:SESSION.ibl,name:'IB Low',tag:'IBL',type:'S'});
+  if(SESSION.sessions.lh) lvs.push({price:SESSION.sessions.lh,name:'London HOD',tag:'LON',type:'R'});
+  if(SESSION.sessions.ll) lvs.push({price:SESSION.sessions.ll,name:'London LOD',tag:'LON',type:'S'});
+  if(SESSION.sessions.nyh) lvs.push({price:SESSION.sessions.nyh,name:'NY HOD',tag:'NY',type:'R'});
+  if(SESSION.sessions.nyl) lvs.push({price:SESSION.sessions.nyl,name:'NY LOD',tag:'NY',type:'S'});
+  SESSION.gexStrikes.forEach(function(s){if(s.price) lvs.push({price:s.price,name:s.note||'Strike GEX',tag:'GEX',type:'N'});});
+  SESSION.customLevels.forEach(function(l){lvs.push({price:l.price,name:l.name,tag:l.type,type:l.type});});
+  if(sp) lvs.push({price:sp,name:'SPOT',tag:'◆',type:'P',isSpot:true});
+  return lvs;
+}
+
+function renderSituationLevels(){
+  var c=el('s-levels'); if(!c) return;
+  var sp=SESSION.spot;
+  var lvs=buildAllLevels().sort(function(a,b){return b.price-a.price;});
+  c.innerHTML=lvs.map(function(lv){
+    if(!lv.price||lv.price<100) return '';
+    var dist=sp?+(lv.price-sp).toFixed(1):null;
+    var dStr=dist!==null?(dist>0?'+'+dist:dist)+' pts':'';
+    var dCol=dist>0?'var(--red)':dist<0?'var(--green)':'var(--accent)';
+    var priceCol=lv.type==='R'?'var(--red)':lv.type==='S'?'var(--green)':lv.type==='P'?'var(--accent)':'var(--gold)';
+    var cls='lv-row'+(lv.isSpot?' is-spot':'');
+    return '<div class="'+cls+'">'+
+      '<span class="lv-tag '+lv.type+'">'+lv.tag+'</span>'+
+      '<span class="lv-price" style="color:'+priceCol+'">'+lv.price.toFixed(0)+'</span>'+
+      '<span class="lv-name">'+lv.name+'</span>'+
+      (dist!==null?'<span class="lv-dist" style="color:'+dCol+'">'+dStr+'</span>':'')+
+    '</div>';
+  }).join('');
+}
+
+function renderConfluences(){
+  var c=el('s-confluences'); if(!c) return;
+  var sp=SESSION.spot; if(!sp){c.innerHTML='—';return;}
+  var lvs=buildAllLevels().filter(function(l){return l.price>100&&!l.isSpot;});
+  // Group levels within 5pts
+  var groups=[];
+  lvs.sort(function(a,b){return b.price-a.price;}).forEach(function(lv){
+    var found=false;
+    groups.forEach(function(g){if(Math.abs(g.center-lv.price)<8){g.items.push(lv);g.center=(g.center+lv.price)/2;found=true;}});
+    if(!found) groups.push({center:lv.price,items:[lv]});
+  });
+  var confluences=groups.filter(function(g){return g.items.length>=2;}).sort(function(a,b){return Math.abs(a.center-sp)-Math.abs(b.center-sp);});
+  if(!confluences.length){c.innerHTML='<span style="color:var(--text3)">Pas de confluence majeure dans les niveaux actuels.</span>';return;}
+  c.innerHTML=confluences.map(function(g){
+    var dist=+(g.center-sp).toFixed(1);
+    var col=dist>0?'var(--red)':'var(--green)';
+    var strength=g.items.length>=3?'★★★':g.items.length>=2?'★★':'★';
+    return '<div style="margin-bottom:6px">'+
+      '<span style="color:'+col+';font-family:Orbitron,monospace;font-size:11px;font-weight:700">'+g.center.toFixed(0)+'</span>'+
+      ' <span style="color:var(--gold)">'+strength+'</span>'+
+      ' <span style="color:var(--text3);font-size:10px">('+g.items.map(function(i){return i.tag;}).join(' + ')+')</span>'+
+      ' <span style="color:'+col+';font-size:10px">'+(dist>=0?'+':'')+dist+' pts</span>'+
+    '</div>';
+  }).join('');
+}
+
+function renderLevelDesc(){
+  var c=el('level-descriptions'); if(!c) return;
+  var sp=SESSION.spot;
+  var descs=[
+    {p:SESSION.flip,n:'Flip/Monthly Open',desc:'Pivot gamma. Au-dessus = regime moins négatif, bounce méca sur dips. En dessous = gamma− actif, breaks amplifiés.'},
+    {p:SESSION.cwall,n:'Calls Wall',desc:'Résistance dealer forte. Les dealers vendent des calls à ce niveau → ils se couvrent en vendant le sous-jacent si le prix monte. Aimant d\'expiration si spot dessous.'},
+    {p:SESSION.pwall,n:'Puts Wall',desc:'Support dealer fort. Les dealers vendent des puts ici → ils se couvrent en achetant si prix descend. Rebond violent si touché.'},
+    {p:SESSION.vah,n:'VAH',desc:'Value Area High. Résistance : 70% du volume s\'est fait sous ce niveau. Break avec volume = extension vers la prochaine résistance.'},
+    {p:SESSION.val,n:'VAL',desc:'Value Area Low. Support : 70% du volume s\'est fait au-dessus. Rupture = distribution, aimant vers VPOC de la session précédente.'},
+    {p:SESSION.vpoc.d,n:'VPOC Daily',desc:'Highest volume price. C\'est l\'aimant principal de la session. Le prix revient souvent ici en clôture. Point de fair value intraday.'},
+  ];
+  c.innerHTML=descs.filter(function(d){return d.p;}).map(function(d){
+    var dist=sp?+(d.p-sp).toFixed(1):null;
+    return '<div style="margin-bottom:8px;padding:6px 8px;background:var(--bg3);border-radius:4px">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
+        '<strong style="font-size:11px;color:var(--text1)">'+d.n+' — '+d.p+'</strong>'+
+        (dist!==null?'<span style="font-size:10px;color:'+(dist>0?'var(--red)':'var(--green)')+'">'+( dist>=0?'+':'')+dist+' pts</span>':'')+
+      '</div>'+
+      '<div style="font-size:10px;color:var(--text3);line-height:1.7">'+d.desc+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OPTIONS 0DTE — STRATÉGIE OTM UNIQUEMENT (jamais ATM) ENGINE
+// ═══════════════════════════════════════════════════════════════
+function updateOptions(){
+  var sp=parseFloat(el('opt-spot').value)||SESSION.spot||6862;
+  var flip=parseFloat(el('opt-flip').value)||SESSION.flip||6819;
+  var str=parseFloat(el('opt-straddle').value)||SESSION.straddle||56.10;
+  var vix=parseFloat(el('opt-vix').value)||SESSION.vix||23;
+  var vpoc=parseFloat(el('opt-vpoc').value)||SESSION.vpoc.d||6804;
+  var regime=SESSION.regime||'transition', charm=SESSION.charmEffect||'expansif';
+  if(!sp||!str){el('opt-signal')&&(el('opt-signal').textContent='— Renseigne Spot + Straddle —');return;}
+  var upper=+(sp+str*.5).toFixed(2), lower=+(sp-str*.5).toFixed(2);
+  var aboveFlip=sp>flip;
+  setVal('opt-upper',upper); setVal('opt-lower',lower);
+  setText('near-zone',lower+' / '+upper);
+  setText('over-zone','< '+lower+' ou > '+upper);
+  setText('opt-regime-label',
+    (regime==='gneg'?'Gamma −':regime==='gpos'?'Gamma +':'Transition')+
+    ' · Charm: '+charm+' · VIX: '+vix.toFixed(1));
+
+  // Time to close
+  var now=new Date();
+  var etOffset=-5; // ET = UTC-5 (hiver)
+  var etH=now.getUTCHours()+etOffset; if(etH<0) etH+=24;
+  var etM=now.getUTCMinutes();
+  var closeH=16, closeM=0;
+  var minLeft=(closeH-etH)*60+(closeM-etM);
+  var tEl=el('opt-time-bar'), tSub=el('opt-time-sub'), tWarn=el('opt-theta-warn');
+  if(tEl){
+    if(minLeft<=0){tEl.textContent='FERMÉ';tEl.style.color='var(--red)';}
+    else{var h=Math.floor(minLeft/60),m=minLeft%60;tEl.textContent=(h?h+'h ':'')+m+'min';tEl.style.color=minLeft<60?'var(--red)':minLeft<120?'var(--orange)':'var(--gold)';}
+  }
+  if(tWarn){
+    if(minLeft<60) tWarn.innerHTML='<span style="color:var(--red)">⚠ Theta critique — prime quasi nulle. Taille minimale ou abstention.</span>';
+    else if(minLeft<120) tWarn.innerHTML='<span style="color:var(--orange)">Theta élevé — sors dans les 45min. No hold overnight.</span>';
+    else tWarn.innerHTML='<span style="color:var(--green)">Theta gérable. Prime suffisante pour jouer.</span>';
+  }
+
+  // Signal bar
+  var sig=el('opt-signal');
+  if(sig){
+    var sigHtml='';
+    if(regime==='gneg'){
+      sigHtml='<span style="color:var(--red)">⚠ GAMMA − </span>· Amplification des breaks · Charm <strong style="color:'+(charm==='suppressif'?'var(--accent)':'var(--green)')+'">'+charm.toUpperCase()+'</strong>'+
+        (charm==='suppressif'?' → dealers vendent delta → dips non soutenus → biais SHORT':' → dealers achètent sur dips → bounces mécaniques')+
+        ' · Straddle $'+str.toFixed(2)+' → <strong style="color:var(--red)">'+upper+'</strong> / <strong style="color:var(--green)">'+lower+'</strong>';
+    } else if(regime==='gpos'){
+      sigHtml='<span style="color:var(--green)">✓ GAMMA + </span>· Mean reversion dominant · Charm <strong>'+charm.toUpperCase()+'</strong> · Straddle $'+str.toFixed(2)+' → '+upper+' / '+lower+' · Iron condor favorable';
+    } else {
+      sigHtml='<span style="color:var(--gold)">◎ TRANSITION</span> · Flip '+flip+' = pivot · Straddle $'+str.toFixed(2)+' → '+upper+' / '+lower+' · Attendre confirmation direction';
+    }
+    sig.innerHTML=sigHtml;
+    el('opt-signal-bar').style.background=regime==='gneg'?'var(--red-dim)':regime==='gpos'?'var(--green-dim)':'var(--gold-dim)';
+    el('opt-signal-bar').style.borderColor=regime==='gneg'?'rgba(240,48,80,.4)':regime==='gpos'?'rgba(0,232,122,.4)':'rgba(232,160,0,.4)';
+  }
+
+  renderNearSetups(sp,flip,str,upper,lower,vix,vpoc,regime,charm,aboveFlip);
+  renderOverSetups(sp,flip,str,upper,lower,vix,vpoc,regime,charm,aboveFlip);
+  renderAvoid(regime,charm,str);
+  renderGreeks(vix,regime,charm,str);
+  renderOptionsComment(sp,flip,str,upper,lower,vix,vpoc,regime,charm,aboveFlip);
+}
+
+// ─── OPTIONS CARD BUILDER ───────────────────────────────────────
+function optCard(title,stars,badgeLabel,badgeClass,detail,cssClass,priority){
+  var borderTop=priority==='A'?'border-top:2px solid var(--green)':
+                priority==='B'?'border-top:2px solid var(--gold)':
+                priority==='C'?'border-top:2px solid var(--text3)':'';
+  return '<div class="opt-card '+cssClass+'" style="'+borderTop+'">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'+
+      '<div style="display:flex;align-items:center;gap:7px">'+
+        (priority?'<span style="font-family:Orbitron,monospace;font-size:9px;font-weight:900;padding:2px 6px;border-radius:3px;background:'+(priority==='A'?'rgba(0,232,122,.15);color:var(--green)':priority==='B'?'rgba(232,160,0,.15);color:var(--gold)':'rgba(74,98,120,.2);color:var(--text3)')+'">PRIO '+priority+'</span>':'')+
+        '<div class="opt-title" style="color:'+(cssClass==='near'?'var(--accent)':'var(--gold)')+'">'+title+'</div>'+
+      '</div>'+
+      '<span class="opt-stars">'+stars+'</span>'+
+    '</div>'+
+    '<div style="margin-bottom:8px"><span class="opt-badge '+badgeClass+'">'+badgeLabel+'</span></div>'+
+    '<div class="opt-detail">'+detail+'</div>'+
+  '</div>';
+}
+
+
+// ─── HUNTEREYE EXPERT COMMENT ───────────────────────────────────
+function renderOptionsComment(sp,flip,str,upper,lower,vix,vpoc,regime,charm,aboveFlip){
+  var c=el('opt-comment-body'); if(!c) return;
+  sp=sp||SESSION.spot||6862; str=str||SESSION.straddle||56.10;
+  flip=flip||SESSION.flip||6819; vix=vix||SESSION.vix||23;
+  upper=upper||+(sp+str*0.5).toFixed(0); lower=lower||+(sp-str*0.5).toFixed(0);
+  var vah=SESSION.vah||6874, val=SESSION.val||6774, vpocD=SESSION.vpoc.d||6804;
+  var cw=SESSION.cwall||6950, pw=SESSION.pwall||6760;
+  var lhod=SESSION.sessions.lh||6895, llod=SESSION.sessions.ll||6842;
+  var nyl=SESSION.sessions.nyl||6757;
+  var blk=function(t,col,body){
+    return '<div style="margin-bottom:9px;padding:9px 11px;background:var(--bg3);border-radius:5px;border-left:3px solid '+col+'">'+
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:1.5px;color:var(--text3);margin-bottom:4px">'+t+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.85">'+body+'</div></div>';
+  };
+  var html='';
+
+  // 1. CONTEXTE STRUCTUREL
+  html+=blk('CONTEXTE STRUCTUREL — TRIPLE ALIGNEMENT HAUSSIER','var(--gold)',
+    '<strong style="color:var(--gold)">Transition gamma + Charm expansif + Vanna haussière</strong> = les trois forces dealer sont alignées dans le même sens haussier.<br><br>'+
+    '<strong>① Gamma (Transition)</strong> : prix '+sp+' = +'+(sp-flip)+' pts au-dessus flip '+flip+'. Gamma en cours d\'amélioration. Les baisses sont moins amplifiées, les calls bénéficient mécaniquement de chaque hausse.<br>'+
+    '<strong>② Charm (Expansif/Jaune)</strong> : dealers accumulent du delta LONG heure après heure. Plus la session avance, plus les dips sont achetés mécaniquement. Vent favorable maximal entre 13h30-16h ET.<br>'+
+    '<strong>③ Vanna (Haussière)</strong> : VIX en baisse depuis le pic de stress → calls sur-performent leur delta. Chaque -0.5pt VIX = ~5-15% de P&L supplémentaire sur les calls.<br><br>'+
+    '<strong style="color:var(--green)">Biais du jour :</strong> Longs sur pullbacks = setup avec vent dans le dos sur les 3 dimensions dealer. '+
+    '<strong style="color:var(--red)">Shorts</strong> = contre les 3 forces dealer = à éviter sauf catalyst externe fort et confirmation stricte.');
+
+  // 2. CARTE DES NIVEAUX OPTIONS
+  html+=blk('CARTE DES NIVEAUX 0DTE — PRIX RÉELS DU JOUR','var(--accent)',
+    '▲ <strong style="color:var(--red)">'+cw+'</strong> · Calls Wall dealer — résistance ultime, +'+( cw-sp)+' pts<br>'+
+    '▲ <strong style="color:var(--red)">'+upper+'</strong> · Borne straddle upper $'+str.toFixed(2)+' — gamma pinning résistance<br>'+
+    '▲ <strong style="color:var(--red)">'+lhod+'</strong> · London HOD / straddle upper zone — triple résistance<br>'+
+    '▲ <strong style="color:var(--red)">'+vah+'</strong> · VAH Daily — 70% du volume EN DESSOUS, résistance de valeur<br>'+
+    '─ <strong style="color:var(--accent)">'+sp+'</strong> · SPOT ACTUEL<br>'+
+    '─ <strong style="color:var(--gold)">'+vpocD+'</strong> · VPOC Daily — aimant de clôture, distance +'+(sp-vpocD)+' pts<br>'+
+    '▼ <strong style="color:var(--orange)">'+flip+'</strong> · Gamma Flip — pivot absolu. Si cassé = gamma négatif de retour<br>'+
+    '▼ <strong style="color:var(--green)">'+llod+'</strong> · London LOD / straddle lower zone — double support<br>'+
+    '▼ <strong style="color:var(--green)">'+lower+'</strong> · Borne straddle lower — gamma pinning support<br>'+
+    '▼ <strong style="color:var(--green)">'+val+'</strong> · VAL Daily — support de valeur, 70% volume AU-DESSUS<br>'+
+    '▼ <strong style="color:var(--green)">'+pw+'</strong> · Puts Wall dealer — rebond mécanique garanti si touché');
+
+  // 3. LOGIQUE NEAR vs OVER
+  html+=blk('NEAR vs OVER — LOGIQUE DE DÉCISION','var(--accent)',
+    '<strong>NEAR straddle ('+lower+'/'+upper+')</strong> — tu restes dans le range d\'expiration.<br>'+
+    'Le marché est en Outside Day V-shape : après la violence de la matinée, le PM tend à consolider. '+
+    'Les bornes '+lower+'/'+upper+' sont défendues mécaniquement par les dealers (gamma pinning). '+
+    'Theta travaille POUR les spreads crédits. Les primes $'+str.toFixed(2)+' sont élevées → edge vendeur fort sur les niveaux.<br><br>'+
+    '<strong>OVER straddle (break < '+lower+' ou > '+upper+')</strong> — le prix sort de son range d\'expiration.<br>'+
+    'En transition+expansif, le break haussier (> '+upper+') est le plus probable si VAH '+vah+' est reclaimé avec volume. '+
+    'Le break baissier (< '+lower+') nécessite un catalyst externe + retour sous le flip '+flip+'. '+
+    '<strong style="color:var(--red)">Règle absolue : jamais entrer en anticipation du break.</strong> '+
+    'Attendre 2 bougies 5min de clôture au-delà de la borne avec volume > moyenne des 5 dernières bougies.');
+
+  // 4. VIX + PRICING
+  html+=blk('VIX '+vix.toFixed(1)+' — IMPACT SUR LE PRICING DES PRIMES','var(--gold)',
+    'Straddle $'+str.toFixed(2)+' = range implicite quotidien <strong>±'+str.toFixed(0)+' pts</strong> (soit breakeven calls/puts acheté à ce prix).<br><br>'+
+    '<strong>Pourquoi les primes sont élevées :</strong> La journée Outside Day a généré une volatilité réalisée exceptionnelle (+'+( SESSION.sessions.nyh-SESSION.sessions.nyl||112)+' pts NY session). '+
+    'Le marché anticipe que la volatilité reste élevée jusqu\'à clôture.<br><br>'+
+    '<strong>Conséquences :</strong><br>'+
+    '→ <strong style="color:var(--red)">Achat de prime sec = breakeven difficile</strong> : il faut un move de '+(str*0.5).toFixed(0)+' pts juste pour rentrer dans ses frais.<br>'+
+    '→ <strong style="color:var(--green)">Spreads (débit ou crédit) = risk réduit</strong> : le coût est plafonné, l\'edge vient du niveau, pas de la direction pure.<br>'+
+    '→ <strong style="color:var(--green)">Vente de prime sur rejections = edge immédiat</strong> : tu encaisses une prime élevée à un niveau technique fort.<br><br>'+
+    '<strong>Si VIX baisse intraday</strong> (vanna haussière) : tes long calls sur-performent. Tes long puts souffrent doublement → ferme les puts rapidement si VIX ne monte pas.');
+
+  c.innerHTML=html;
+}
+
+// ─── NEAR STRADDLE SETUPS ────────────────────────────────────────
+function renderNearSetups(sp,flip,str,upper,lower,vix,vpoc,regime,charm,aboveFlip){
+  var c=el('near-setups'); if(!c) return;
+  sp=sp||SESSION.spot; str=str||SESSION.straddle;
+  flip=flip||SESSION.flip; vix=vix||SESSION.vix;
+  upper=upper||+(sp+str*0.5).toFixed(0);
+  lower=lower||+(sp-str*0.5).toFixed(0);
+  var vah=SESSION.vah, val=SESSION.val, vpocD=SESSION.vpoc&&SESSION.vpoc.d;
+  var cw=SESSION.cwall, pw=SESSION.pwall;
+  var html='';
+
+  // ── NEAR SETUPS = prix DANS le range straddle ──
+  // Logique : on trade les rebonds/rejections sur les bornes et niveaux dealer
+  // TOUJOURS OTM — jamais ATM
+
+  if(regime==='gneg'){
+    // Régime gamma négatif : les dealers amplifient les moves
+    // Setups favoris : credit call spread sur rejection, long put OTM si break bas
+
+    if(charm==='expansif'){
+      // Gneg + charm expansif = marché violent mais dips achetés mécaniquement PM
+      // Setup A : Credit call spread sur rejection borne upper / résistances
+      html+=optCard(
+        'CREDIT CALL SPREAD — Rejection borne upper '+upper+' / flip '+flip,
+        '★★★★★','NEAR · CREDIT CALL · PRIO A','over-b',
+        '<strong style="color:var(--text3);font-size:10px">LOGIQUE DU SETUP</strong><br>'+
+        'Gamma négatif : les MMs doivent vendre delta quand le prix monte → mur vendeur mécanique sous le flip '+flip+'. '+
+        'La borne upper straddle '+upper+' = zone où les options calls commencent à créer un plafond de gamma. '+
+        'Charm expansif = les dips sont rachetés, mais les rallies sont limités structurellement sous le flip.<br><br>'+
+        '<strong>Structure OTM :</strong><br>'+
+        '→ Short call SPX <strong>'+upper+'</strong> (borne upper straddle — zone gamma)<br>'+
+        '→ Long call SPX <strong>'+(+upper+20).toFixed(0)+'</strong> (couverture obligatoire — jamais naked)<br>'+
+        '<em>Alternative tight :</em> Short call '+(+upper+5).toFixed(0)+' / Long call '+(+upper+20).toFixed(0)+'<br><br>'+
+        '<strong>Conditions d\'entrée :</strong><br>'+
+        '① Rally vers '+upper+' avec bougie de rejection visible (mèche haute ou englobante baissière 5min)<br>'+
+        '② Ask wall DOM visible au-dessus (carnet confirme la résistance)<br>'+
+        '③ Prix reste sous le flip '+flip+' — si flip reclaim = invalide immédiatement<br>'+
+        '④ Timing : NOT entre 12h30-13h30 ET (lunch = faux mouvements)<br><br>'+
+        '<strong>Gestion :</strong><br>'+
+        '→ Objectif : 50% de la prime encaissée (theta + gamma jouent pour toi)<br>'+
+        '→ Stop : clôture 5min > <strong style="color:var(--red)">'+(+upper+8).toFixed(0)+'</strong> → racheter immédiatement<br>'+
+        '→ Stop hard : flip '+flip+' reclaimé en clôture 15min → fermer TOUT<br><br>'+
+        '<strong>RR : ~2:1</strong> · Timing optimal : 10h-11h30 ET ou 14h-15h30 ET',
+        'near','A'
+      );
+
+      // Setup B : Put spread OTM sur bounce bid DOM / lower straddle
+      html+=optCard(
+        'DEBIT PUT SPREAD OTM — Rebond lower '+lower+' cassé (continuation)',
+        '★★★★☆','NEAR · PUT SPREAD · PRIO B','over-b',
+        '<strong style="color:var(--text3);font-size:10px">LOGIQUE DU SETUP</strong><br>'+
+        'Si le lower straddle '+lower+' est cassé avec volume → gamma négatif amplifie la baisse. '+
+        'On prend un spread OTM pour limiter le coût avec VIX élevé ('+vix.toFixed(1)+').<br><br>'+
+        '<strong>Structure OTM :</strong><br>'+
+        '→ Long put SPX <strong>'+(+lower-5).toFixed(0)+'</strong> (OTM −5pts sous le break)<br>'+
+        '→ Short put SPX <strong>'+(+lower-25).toFixed(0)+'</strong> (réduit le coût de prime, plafonne le gain)<br><br>'+
+        '<strong>Conditions :</strong><br>'+
+        '① Clôture 5min SOUS '+lower+' avec volume > moyenne (break confirmé)<br>'+
+        '② DOM : bid stack à '+lower+' a été traversé (pas de bid réel sous ce niveau)<br>'+
+        '③ Charm expansif s\'affaiblit (re-checker VolSignals gradient)<br>'+
+        '④ Puts Wall '+pw+' = objectif final, pas un stop de départ<br><br>'+
+        '<strong>Cibles :</strong><br>'+
+        '→ T1 : <strong style="color:var(--green)">'+(+lower-15).toFixed(0)+'</strong> (−15pts break) → sortir 60%<br>'+
+        '→ T2 : <strong style="color:var(--green)">'+pw+'</strong> (Puts Wall dealer) → sortir 40%<br>'+
+        '→ Stop : retour > '+lower+' sur clôture 5min → fermer tout<br><br>'+
+        '<strong style="color:var(--orange)">Attention charm expansif :</strong> Les rebonds mécaniques PM peuvent être violents. Toujours stop sur retour > break.',
+        'near','B'
+      );
+
+    } else {
+      // Gneg + charm suppressif = le régime le plus baissier possible
+      html+=optCard(
+        'DEBIT PUT SPREAD OTM — Continuation baissière (Prio A)',
+        '★★★★★','NEAR · PUT SPREAD · PRIO A','over-b',
+        '<strong>Gamma négatif + charm suppressif = double vent baissier mécanique.</strong><br>'+
+        '<strong>Structure :</strong> Long put <strong>'+(+sp-7).toFixed(0)+'</strong> (OTM −7pts) / Short put <strong>'+(+sp-27).toFixed(0)+'</strong><br>'+
+        '<strong>Entrée :</strong> Rejection du upper '+upper+' ou flip '+flip+' avec volume vendeur + carnet<br>'+
+        '<strong>T1 :</strong> '+lower+' · <strong>T2 :</strong> '+(+lower-20).toFixed(0)+' · <strong>T3 :</strong> '+pw+'<br>'+
+        '<strong>Stop :</strong> Clôture > '+(+sp+5).toFixed(0)+' sur 5min',
+        'near','A'
+      );
+    }
+
+  } else if(regime==='gpos'){
+    // Gamma positif : mean reversion, les bornes sont des aimants
+    html+=optCard(
+      'CREDIT PUT SPREAD — Support lower '+lower+' (Prio A)',
+      '★★★★★','NEAR · CREDIT PUT · PRIO A','near-b',
+      '<strong>Gamma positif = MMs achètent sur les dips → floor mécanique sur lower '+lower+'.</strong><br>'+
+      '<strong>Structure :</strong> Short put <strong>'+lower+'</strong> / Long put <strong>'+(+lower-20).toFixed(0)+'</strong><br>'+
+      '<strong>Condition :</strong> Prix rebondit sur '+lower+' + bid DOM visible + VIX stable<br>'+
+      '<strong>Max gain :</strong> Prime si SPX > '+lower+' à 16h ET<br>'+
+      '<strong>Stop :</strong> Clôture 5min < '+(+lower-10).toFixed(0)+' avec volume = fermer',
+      'near','A'
+    );
+    html+=optCard(
+      'IRON CONDOR — Range straddle '+lower+'/'+upper+' (Prio B)',
+      '★★★★☆','NEAR · IRON CONDOR · PRIO B','over-b',
+      '<strong>Gamma positif amortit les moves. Theta = allié en PM.</strong><br>'+
+      '<strong>Structure :</strong> Put spread '+lower+'/'+(+lower-20).toFixed(0)+' · Call spread '+upper+'/'+(+upper+20).toFixed(0)+'<br>'+
+      '<strong>Timing :</strong> 13h30-15h ET uniquement (theta maximal)<br>'+
+      '<strong>Stop :</strong> Break confirmé d\'un côté → fermer le spread menacé IMMÉDIATEMENT',
+      'near','B'
+    );
+
+  } else {
+    // Transition
+    html+=optCard(
+      'DEBIT CALL SPREAD — Reclaim flip '+flip+' (Prio A)',
+      '★★★★☆','NEAR · CALL SPREAD · PRIO A','near-b',
+      '<strong>Structure :</strong> Long call <strong>'+(+flip+5).toFixed(0)+'</strong> (OTM) / Short call <strong>'+upper+'</strong><br>'+
+      '<strong>Condition :</strong> Flip '+flip+' tenu 2 TPO en clôture 15min + volume confirmé<br>'+
+      '<strong>T1 :</strong> '+vah+' · <strong>T2 :</strong> '+upper+' · <strong>Stop :</strong> Clôture < '+(+flip-3.5).toFixed(0),
+      'near','A'
+    );
+  }
+
+  c.innerHTML=html||'<div style="color:var(--text3);font-size:11px;padding:10px">—</div>';
+}
+
+// ─── OVER STRADDLE SETUPS ────────────────────────────────────────
+function renderOverSetups(sp,flip,str,upper,lower,vix,vpoc,regime,charm,aboveFlip){
+  var c=el('over-setups'); if(!c) return;
+  sp=sp||SESSION.spot; str=str||SESSION.straddle;
+  flip=flip||SESSION.flip; vix=vix||SESSION.vix;
+  upper=upper||+(sp+str*0.5).toFixed(0);
+  lower=lower||+(sp-str*0.5).toFixed(0);
+  var vah=SESSION.vah, val=SESSION.val, vpocD=SESSION.vpoc&&SESSION.vpoc.d;
+  var cw=SESSION.cwall, pw=SESSION.pwall;
+  var html='';
+
+  // ── OVER SETUPS = prix SORT du range straddle (break confirmé) ──
+  // Un break over straddle = gamma s\'emballe → setup le plus puissant de la journée
+  // TOUJOURS OTM, toujours avec confirmation (jamais en anticipation)
+
+  if(regime==='gneg'){
+
+    // OVER A — Break lower : long put spread OTM (setup dominant en gneg)
+    html+=optCard(
+      'DEBIT PUT SPREAD OTM — Break lower '+lower+' confirmé (PRIO A)',
+      '★★★★★','OVER · PUT SPREAD MOMENTUM · PRIO A','over-b',
+      '<strong style="color:var(--text3);font-size:10px">POURQUOI C\'EST LE SETUP LE PLUS FORT</strong><br>'+
+      'Break du lower straddle '+lower+' en gamma négatif = les MMs sont forcés de vendre encore plus de delta. '+
+      'Cascade mécanique garantie. La borne lower était le dernier support gamma. En dessous = accélération.<br>'+
+      'VIX '+vix.toFixed(1)+' = primes élevées → spread OTM pour réduire le coût vs naked long put.<br><br>'+
+      '<strong>Structure OTM :</strong><br>'+
+      '→ Long put SPX <strong>'+(+lower-5).toFixed(0)+'</strong> (OTM −5pts sous le break)<br>'+
+      '→ Short put SPX <strong>'+(+lower-30).toFixed(0)+'</strong> (réduit coût ~40%)<br>'+
+      '<em>Si VIX > 25 :</em> resserrer à long '+(+lower-5).toFixed(0)+' / short '+(+lower-20).toFixed(0)+' (VIX trop élevé pour large spread)<br><br>'+
+      '<strong>4 conditions OBLIGATOIRES :</strong><br>'+
+      '① <strong>Clôture 5min SOUS '+lower+'</strong> — JAMAIS sur spike (attendre la clôture de bougie)<br>'+
+      '② Volume sur la bougie de break > moyenne 5 dernières bougies (engagement réel, pas fake break)<br>'+
+      '③ DOM : bid stack à '+lower+' traversé ou retiré (pas de bid réel sous ce niveau)<br>'+
+      '④ Pas de news macro dans les 30min qui suivent (calendrier économique vide)<br><br>'+
+      '<strong>Gestion :</strong><br>'+
+      '→ Stop : retour > <strong style="color:var(--red)">'+lower+'</strong> sur clôture 5min → fermer 100% sans hésiter<br>'+
+      '→ T1 : <strong style="color:var(--green)">'+(+lower-15).toFixed(0)+'</strong> (−15pts) → sortir 50%, déplacer stop au break-even<br>'+
+      '→ T2 : <strong style="color:var(--green)">'+(+lower-30).toFixed(0)+'</strong> (−30pts) → sortir 30%<br>'+
+      '→ T3 runner 20% : <strong style="color:var(--green)">'+pw+'</strong> (Puts Wall — support dealer ultime)<br><br>'+
+      '<strong>Timing optimal :</strong> 9h45-11h ET (gap down) ou 14h-15h ET (PM momentum)<br>'+
+      '<strong>RR T1 : ~4:1</strong> (15pts gain / 5pts risque sur options)',
+      'over','A'
+    );
+
+    // OVER B — Break upper : call spread OTM (contre-tendance, setup rare)
+    html+=optCard(
+      'DEBIT CALL SPREAD OTM — Break upper '+upper+' AVEC reclaim flip (PRIO B)',
+      '★★★☆☆','OVER · CALL SPREAD SQUEEZE · PRIO B','near-b',
+      '<strong style="color:var(--text3);font-size:10px">SETUP RARE — CONDITIONS TRÈS STRICTES</strong><br>'+
+      'En gamma négatif, un break haussier du upper '+upper+' <strong>ET</strong> du flip '+flip+' = changement de régime. '+
+      'Rare mais explosif : les MMs qui étaient short delta sont forcés de racheter → short squeeze mécanique. '+
+      '<strong style="color:var(--orange)">Setup contre-tendance = taille 50% max.</strong><br><br>'+
+      '<strong>Structure OTM :</strong><br>'+
+      '→ Long call SPX <strong>'+(+upper+5).toFixed(0)+'</strong> (OTM +5pts au-dessus du break)<br>'+
+      '→ Short call SPX <strong>'+(+upper+25).toFixed(0)+'</strong> (plafonne, réduit le coût)<br><br>'+
+      '<strong>CONDITIONS TRÈS STRICTES (toutes requises) :</strong><br>'+
+      '① Clôture 5min > '+upper+' ET flip '+flip+' reclaim en clôture 15min<br>'+
+      '② Volume exceptionnel sur le break (> 2× la moyenne)<br>'+
+      '③ VIX en forte baisse simultanée (vanna haussière qui booste les calls)<br>'+
+      '④ DOM : ask wall au-dessus complètement absorbé/retiré<br><br>'+
+      '<strong>Stop strict :</strong> Retour < '+flip+' sur clôture 5min → fermer TOUT<br>'+
+      '<strong>T1 :</strong> '+(+upper+15).toFixed(0)+' · <strong>T2 :</strong> '+vah+' · <strong>T3 :</strong> '+cw+'<br>'+
+      '<strong style="color:var(--red)">Si toutes les conditions ne sont pas là → abstention.</strong>',
+      'over','B'
+    );
+
+  } else if(regime==='gpos'){
+    html+=optCard(
+      'DEBIT CALL SPREAD OTM — Extension gamma+ break upper '+upper+' (PRIO A)',
+      '★★★★★','OVER · CALL SPREAD MOMENTUM · PRIO A','near-b',
+      '<strong>Gamma positif + break upper = momentum auto-entretenu. MMs forcés d\'acheter delta en cascade.</strong><br>'+
+      '<strong>Structure :</strong> Long call <strong>'+(+upper+5).toFixed(0)+'</strong> (OTM) / Short call <strong>'+(+upper+30).toFixed(0)+'</strong><br>'+
+      '<strong>4 conditions :</strong> Clôture > '+upper+' + volume + pas de mur + charm confirmé<br>'+
+      '<strong>T1 :</strong> '+(+upper+20).toFixed(0)+' → sortir 50% · <strong>T2 :</strong> '+(+upper+40).toFixed(0)+' · <strong>T3 :</strong> '+cw+'<br>'+
+      '<strong>Stop :</strong> Retour < '+upper+' sur clôture 5min. Gamma+ = ne pas couper trop tôt.',
+      'over','A'
+    );
+    html+=optCard(
+      'DEBIT PUT SPREAD OTM — Break lower (très rare en gamma+)',
+      '★★☆☆☆','OVER · PUT SPREAD CONTRE-REGIME · PRIO C','over-b',
+      '<strong style="color:var(--orange)">Gamma positif = ce break est quasi impossible sans catalyst macro fort.</strong><br>'+
+      '<strong>Si ça arrive :</strong> News macro surprise. Taille minimum. Long put <strong>'+(+lower-5).toFixed(0)+'</strong> / Short put <strong>'+(+lower-25).toFixed(0)+'</strong><br>'+
+      '<strong>Condition obligatoire :</strong> Catalyst identifié + volume exceptionnel + charm devenu suppressif<br>'+
+      '<strong>Stop immédiat :</strong> Tout retour > '+lower,
+      'over','C'
+    );
+
+  } else {
+    // Transition
+    html+=optCard(
+      'DEBIT CALL SPREAD OTM — Break upper '+upper+' + reclaim flip '+flip+' (PRIO A)',
+      '★★★★☆','OVER · CALL SPREAD · PRIO A','near-b',
+      '<strong>Structure :</strong> Long call <strong>'+(+upper+5).toFixed(0)+'</strong> (OTM) / Short call <strong>'+(+upper+25).toFixed(0)+'</strong><br>'+
+      '<strong>Condition :</strong> Flip '+flip+' + upper '+upper+' cassés ensemble en clôture 15min + volume<br>'+
+      '<strong>T1 :</strong> '+(+upper+15).toFixed(0)+' → 50% · <strong>T2 :</strong> '+vah+' → 30% · <strong>Stop :</strong> < '+flip,
+      'over','A'
+    );
+    html+=optCard(
+      'DEBIT PUT SPREAD OTM — Break lower '+lower+' + flip '+flip+' cassé (PRIO B)',
+      '★★★★☆','OVER · PUT SPREAD · PRIO B','over-b',
+      '<strong>Structure :</strong> Long put <strong>'+(+lower-5).toFixed(0)+'</strong> (OTM) / Short put <strong>'+(+lower-25).toFixed(0)+'</strong><br>'+
+      '<strong>Condition :</strong> Clôture 5min < '+lower+' + flip cassé + volume vendeur dominant<br>'+
+      '<strong>T1 :</strong> '+(+lower-15).toFixed(0)+' → 50% · <strong>T2 :</strong> '+(+lower-30).toFixed(0)+' · <strong>Stop :</strong> > '+lower,
+      'over','B'
+    );
+  }
+
+  c.innerHTML=html||'<div style="color:var(--text3);font-size:11px;padding:10px">—</div>';
+}
+
+// ─── À ÉVITER ────────────────────────────────────────────────────
+function renderAvoid(regime,charm,str){
+  var sp=SESSION.spot||6862;
+  var upper=+(sp+str*0.5).toFixed(0), lower=+(sp-str*0.5).toFixed(0);
+  var flip=SESSION.flip||6819, vah=SESSION.vah||6874, vpoc=SESSION.vpoc.d||6804;
+  var lhod=SESSION.sessions.lh||6895;
+  var items=[];
+
+  // Prio rouge — risque de perte dévastatrice
+  items.push({sev:'red',t:'Short call nu (NAKED) en transition — si le break de '+upper+' arrive, tu es en perte illimitée. TOUJOURS couvrir avec un long call. Jamais de naked short en options.'});
+  items.push({sev:'red',t:'Long put OTM sans break du flip '+flip+' — charm expansif soutient les dips mécaniquement. Tu achètes $'+( str*0.3).toFixed(0)+'+  de prime CONTRE le vent structurel. Probabilité de perte > 70%.'});
+  items.push({sev:'red',t:'Achat de straddle ou strangle sec : prime $'+str.toFixed(2)+' = il faut un move de +'+(str*0.5).toFixed(0)+'pts juste pour atteindre le breakeven. En Outside Day PM qui consolide = theta te détruit.'});
+  items.push({sev:'red',t:'3e trade dans la journée — règle absolue non négociable. Max 2 scalps/jour. Le 3e trade est toujours émotionnel = toujours une erreur.'});
+  items.push({sev:'red',t:'Trade entre 12h30-13h30 ET (lunch US) — spread bid/ask ×2, liquidité −40%, faux signaux ×2. Toute entrée pendant cette fenêtre = désavantage structurel.'});
+
+  // Prio orange — erreurs courantes
+  items.push({sev:'orange',t:'Entrer AVANT la clôture de bougie au-delà de la borne — les stops sont systématiquement chassés sur les spikes. Attendre TOUJOURS la clôture 5min > '+upper+' ou < '+lower+'.'});
+  items.push({sev:'orange',t:'Shorter agressivement la force en transition+expansif — les 3 forces dealer (gamma/charm/vanna) soutiennent les calls. Le short nécessite un catalyst externe fort, pas juste une résistance.'});
+  items.push({sev:'orange',t:'Long call/put sec (non spreadé) avec VIX '+SESSION.vix.toFixed(1)+' > 20 — si VIX baisse intraday de 1pt, la prime perd ~8-12% par vanna même si le prix bouge dans la bonne direction.'});
+  items.push({sev:'orange',t:'Ignorer le VPOC '+vpoc+' comme aimant de clôture — en Outside Day, ~65% des sessions pin sur le VPOC entre 15h-16h ET. Ne pas tenir une option directionnelle sans tenir compte de ce magnétisme.'});
+  items.push({sev:'orange',t:'Doubler une option perdante — si le setup est contre toi, il est invalide. Fermer, analyser pourquoi le niveau n\'a pas tenu, attendre le prochain setup propre.'});
+  items.push({sev:'orange',t:'Entrer en milieu de range ('+(+(lower+(upper-lower)*0.4)).toFixed(0)+'-'+(+(lower+(upper-lower)*0.6)).toFixed(0)+') sans confluence — zone de bruit pure. Ni support ni résistance = stop chassé dans les deux sens.'});
+
+  var c=el('opt-avoid'); if(!c) return;
+  c.innerHTML=items.map(function(it){
+    var bc=it.sev==='red'?'var(--red)':'var(--orange)';
+    var bg=it.sev==='red'?'var(--red-dim)':'rgba(232,120,0,.08)';
+    return '<div style="display:flex;gap:8px;padding:7px 10px;background:'+bg+';border-radius:4px;border-left:2px solid '+bc+';margin-bottom:5px">'+
+      '<span style="color:'+bc+';flex-shrink:0;font-size:12px;margin-top:1px">'+(it.sev==='red'?'✕':'⚠')+'</span>'+
+      '<span style="font-size:11px;color:var(--text2);line-height:1.65">'+it.t+'</span>'+
+    '</div>';
+  }).join('');
+}
+
+// ─── GRECS SECONDAIRES ───────────────────────────────────────────
+function renderGreeks(vix,regime,charm,str){
+  var c=el('opt-greeks'); if(!c) return;
+  var sp=SESSION.spot||6862;
+  var upper=sp?+(sp+str*0.5).toFixed(0):0, lower=sp?+(sp-str*0.5).toFixed(0):0;
+  var flip=SESSION.flip||6819;
+  vix=vix||SESSION.vix||23;
+
+  var blk=function(letter,name,col,body){
+    return '<div style="padding:10px 12px;background:var(--bg3);border-radius:5px;border-left:3px solid '+col+';margin-bottom:8px">'+
+      '<div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px">'+
+        '<span style="font-family:Orbitron,monospace;font-size:14px;font-weight:900;color:'+col+'">'+letter+'</span>'+
+        '<span style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:var(--text3)">'+name+'</span>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.85">'+body+'</div></div>';
+  };
+
+  // THETA
+  var thetaCol=str<15?'var(--red)':str<30?'var(--orange)':'var(--green)';
+  var thetaBody=str>40?
+    '<strong style="color:var(--green)">GÉRABLE — Straddle $'+str.toFixed(2)+'</strong><br>'+
+    'Range implicite journalier ±'+str.toFixed(0)+' pts. Tu as du temps devant toi.<br>'+
+    'Decay estimé par heure : ~$'+(str/6.5).toFixed(2)+'/heure (accélère après 14h ET).<br>'+
+    '<strong>Règle :</strong> Après 14h ET, le theta double de vitesse. Sors tes options gagnantes avant 15h30 ET. '+
+    'Jamais de perdant en portefeuille après 15h ET sauf exception justifiée.':
+    str>20?
+    '<strong style="color:var(--orange)">ÉLEVÉ — Straddle $'+str.toFixed(2)+'</strong><br>'+
+    'Decay rapide. Sors dans les 45min max. Jamais de position perdante après 14h ET.':
+    '<strong style="color:var(--red)">CRITIQUE — Straddle $'+str.toFixed(2)+' quasi expiré</strong><br>'+
+    'Abstention totale ou taille ×0.25 maximum. Le theta détruit chaque minute.';
+
+  // VANNA
+  var vannaCol=SESSION.vannaDir==='bullish'?'var(--green)':SESSION.vannaDir==='bearish'?'var(--red)':'var(--text3)';
+  var vannaBody=SESSION.vannaDir==='bullish'?
+    '<strong style="color:var(--green)">HAUSSIÈRE — VIX en baisse</strong><br>'+
+    'Vanna = dΔ/dσ. Quand σ (vol) baisse, le delta des calls augmente au-delà de ce que le modèle prédit.<br><br>'+
+    '<strong>Chiffres concrets avec VIX '+vix.toFixed(1)+' :</strong><br>'+
+    '→ VIX −0.5pt → calls sur-performent delta de ~5-8%<br>'+
+    '→ VIX −1pt → calls sur-performent de ~10-15%<br>'+
+    '→ VIX −2pts → calls sur-performent de ~20-30%<br><br>'+
+    '<strong>Impact long calls :</strong> Double bénéfice (delta + vanna). Si VIX baisse pendant que SPX monte = jackpot.<br>'+
+    '<strong>Impact long puts :</strong> Double peine. Ferme rapidement si VIX ne monte pas.':
+    SESSION.vannaDir==='bearish'?
+    '<strong style="color:var(--red)">BAISSIÈRE — VIX en hausse</strong><br>'+
+    'VIX monte → puts sur-performent leur delta de ~15-30% par +1pt VIX.<br>'+
+    'Long puts en VIX tendance haussière = meilleur setup du livre.':
+    '<strong style="color:var(--text3)">NEUTRE</strong><br>'+
+    'VIX stable → vanna sans direction. Gamma et charm dominent la décision du jour.';
+
+  // CHARM
+  var charmCol=charm==='expansif'?'var(--green)':charm==='suppressif'?'var(--accent)':'var(--text3)';
+  var charmBody=charm==='expansif'?
+    '<strong style="color:var(--green)">EXPANSIF (Jaune VolSignals)</strong><br>'+
+    'Charm = dΔ/dt. Les options proches de la monnaie voient leur delta AUGMENTER avec le temps.<br>'+
+    'Les dealers doivent acheter du sous-jacent mécaniquement pour rester neutres.<br><br>'+
+    '<strong>Calendrier d\'intensité :</strong><br>'+
+    '→ 9h30-11h : modéré (~5% de la pression totale)<br>'+
+    '→ 11h-13h : croissant (~20%)<br>'+
+    '→ 13h30-15h : fort (~40%) — charm s\'accélère<br>'+
+    '→ 15h-16h : maximal (~35%) — les dips PM sont structurellement achetés<br><br>'+
+    '<strong>Pour toi :</strong> Tes long calls ont un vent favorable qui s\'intensifie. Ne short pas la fin de session sans catalyst fort.':
+    '<strong style="color:var(--accent)">SUPPRESSIF (Bleu VolSignals)</strong><br>'+
+    'Les dealers vendent du delta mécaniquement. Pression vendeuse croissante heure après heure.<br>'+
+    'Les dips ne sont pas achetés structurellement. Vent contraire sur les calls.';
+
+  // GAMMA
+  var gammaCol=regime==='gneg'?'var(--red)':regime==='gpos'?'var(--green)':'var(--gold)';
+  var gammaBody=regime==='transition'?
+    '<strong style="color:var(--gold)">TRANSITION (vers Positif)</strong><br>'+
+    'Prix '+(sp-flip)+' pts au-dessus du flip '+flip+'. Gamma en amélioration.<br><br>'+
+    '<strong>Asymétrie actuelle :</strong><br>'+
+    '→ Break haussier (> '+upper+') : amplifié, mais moins qu\'en gamma− pur. Moves de 20-35pts possibles.<br>'+
+    '→ Break baissier (< '+lower+') : peut encore générer une cascade si flip '+flip+' cassé. Moves de 30-50pts possibles.<br>'+
+    '→ Range '+(+lower+5).toFixed(0)+'-'+(+upper-5).toFixed(0)+' : theta domine, pinning probable vers VPOC '+(SESSION.vpoc.d||6804)+'.':
+    regime==='gpos'?
+    '<strong style="color:var(--green)">POSITIF</strong><br>'+
+    'Amortisseur de moves. Mean reversion domine. Spreads crédits = edge maximum. Long options = theta te détruit progressivement.':
+    '<strong style="color:var(--red)">NÉGATIF</strong><br>'+
+    'Amplificateur de moves. Chaque move est exagéré (ATR effectif ×1.5-2). Long options directionnelles = edge. Spreads crédits = risque max.';
+
+  c.innerHTML=
+    blk('Θ','THETA / VALEUR TEMPS',thetaCol,thetaBody)+
+    blk('ν','VANNA / EFFET VIX',vannaCol,vannaBody)+
+    blk('∂','CHARM / EFFET TEMPS',charmCol,charmBody)+
+    blk('Γ','GAMMA / AMPLIFICATION',gammaCol,gammaBody);
+}
+
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// DEALER — UPDATE + RENDER FUNCTIONS (charm, vanna, analysis, comment)
+// ═══════════════════════════════════════════════════════════════
+
+function updateDealer(){
+  SESSION.flip    = parseFloat(el('di-flip').value)    || SESSION.flip;
+  SESSION.cwall   = parseFloat(el('di-cwall').value)   || SESSION.cwall;
+  SESSION.pwall   = parseFloat(el('di-pwall').value)   || SESSION.pwall;
+  SESSION.straddle= parseFloat(el('di-straddle').value)|| SESSION.straddle;
+  SESSION.vix     = parseFloat(el('di-vix').value)     || SESSION.vix;
+  SESSION.pcr     = parseFloat(el('di-pcr').value)     || SESSION.pcr;
+  SESSION.regime  = el('di-regime').value              || SESSION.regime;
+  SESSION.charmScheme = el('di-charm-scheme').value    || SESSION.charmScheme;
+  SESSION.charmColor  = el('di-charm-color').value     || SESSION.charmColor;
+  SESSION.vannaDir    = el('di-vanna').value           || SESSION.vannaDir;
+
+  // Déduire l'effet charm depuis couleur + schéma
+  var scheme=SESSION.charmScheme, color=SESSION.charmColor;
+  if(scheme==='blue-yellow'){
+    SESSION.charmEffect = (color==='yellow'||color==='green')?'expansif':(color==='blue'||color==='red')?'suppressif':'neutre';
+  } else {
+    SESSION.charmEffect = (color==='green'||color==='yellow')?'expansif':(color==='red'||color==='blue')?'suppressif':'neutre';
+  }
+
+  // Mettre à jour les KPIs header
+  var sp=SESSION.spot||6862, flip=SESSION.flip, cw=SESSION.cwall, pw=SESSION.pwall;
+  var str=SESSION.straddle; var upper=+(sp+str*0.5).toFixed(0), lower=+(sp-str*0.5).toFixed(0);
+  setText('d-flip',flip||'—'); setText('d-cwall',cw||'—'); setText('d-pwall',pw||'—');
+  setText('d-straddle',str?'$'+str.toFixed(2):'—');
+  setText('d-str-range',upper&&lower?lower+' / '+upper:'—');
+  setText('d-pcr',SESSION.pcr||'—');
+  setText('d-pcr-sub',SESSION.pcr?(SESSION.pcr>1.2?'Bearish flow':SESSION.pcr<0.8?'Bullish flow':'Neutre'):'—');
+  var fp=sp>flip;
+  setText('d-flip-pos',fp?'▲ Au-dessus':'▼ Sous flip');
+  el('d-flip-pos')&&(el('d-flip-pos').style.color=fp?'var(--green)':'var(--red)');
+  var charmLabel={'expansif':'EXPANSIF ↑','suppressif':'SUPPRESSIF ↓','neutre':'NEUTRE'}[SESSION.charmEffect]||'—';
+  var charmCol={'expansif':'var(--green)','suppressif':'var(--accent)','neutre':'var(--text3)'}[SESSION.charmEffect]||'var(--text3)';
+  setText('d-charm-kpi',charmLabel);
+  el('d-charm-kpi')&&(el('d-charm-kpi').style.color=charmCol);
+
+  renderCharm(); renderVanna(); renderDealerAnalysis(); renderDealerComment();
+  drawGEXBars();
+}
+
+// ─── CHARM DISPLAY ────────────────────────────────────────────
+function renderCharm(){
+  var c=el('charm-display'); if(!c) return;
+  var eff=SESSION.charmEffect||'neutre';
+  var col={'expansif':'var(--green)','suppressif':'var(--accent)','neutre':'var(--text3)'}[eff];
+  var scheme=SESSION.charmScheme||'blue-yellow';
+  var color=SESSION.charmColor||'neutral';
+
+  var schemeNote = scheme==='blue-yellow'
+    ? 'Schéma Blue/Yellow : <strong style="color:var(--green)">Jaune = Expansif</strong> · <strong style="color:var(--accent)">Bleu = Suppressif</strong>'
+    : 'Schéma Green/Red : <strong style="color:var(--green)">Vert = Expansif</strong> · <strong style="color:var(--red)">Rouge = Suppressif</strong>';
+
+  var bodies = {
+    expansif:
+      '<strong style="color:var(--green)">EXPANSIF — '+(scheme==='blue-yellow'?'JAUNE':'VERT')+' dominant</strong><br><br>'+
+      '<strong>Mécanisme :</strong> Charm = dΔ/dt. Les options proches du spot voient leur delta <em>augmenter</em> avec le temps. '+
+      'Les dealers short ces options doivent <strong>acheter</strong> du sous-jacent mécaniquement pour rester delta-neutres.<br><br>'+
+      '<strong>Intensité au fil de la session :</strong><br>'+
+      '<div style="margin:6px 0;display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:10px">'+
+        '<span style="color:var(--text3)">9h30-11h</span><span>Modéré — open flows dominent. Charm ~15% de sa puissance.</span>'+
+        '<span style="color:var(--gold)">11h-13h</span><span>Croissant — charm s\'installe. Dips commencent à trouver des acheteurs.</span>'+
+        '<span style="color:var(--orange)">13h30-15h</span><span><strong>Fort</strong> — pression acheteuse mécanique nettement visible. Ne shorter pas en mid-PM.</span>'+
+        '<span style="color:var(--red)">15h-16h</span><span><strong>Maximal</strong> — les dips de fin de session sont structurellement achetés. Charm dominant.</span>'+
+      '</div>'+
+      '<strong>Impact sur tes trades :</strong><br>'+
+      '→ Long calls : vent favorable croissant<br>'+
+      '→ Long puts : vent contraire en fin de session<br>'+
+      '→ <strong style="color:var(--green)">Ne jamais shorter agressivement après 14h ET sans catalyst externe fort</strong>',
+
+    suppressif:
+      '<strong style="color:var(--accent)">SUPPRESSIF — '+(scheme==='blue-yellow'?'BLEU':'ROUGE')+' dominant</strong><br><br>'+
+      '<strong>Mécanisme :</strong> Charm = dΔ/dt. En suppressif, le delta des options <em>diminue</em> avec le temps. '+
+      'Les dealers doivent <strong>vendre</strong> du sous-jacent mécaniquement heure après heure.<br><br>'+
+      '<strong>Intensité croissante :</strong><br>'+
+      '<div style="margin:6px 0;display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:10px">'+
+        '<span style="color:var(--text3)">9h30-11h</span><span>Modéré — pression vendeuse légère.</span>'+
+        '<span style="color:var(--orange)">13h30-15h</span><span><strong>Fort</strong> — pression vendeuse mécanique. Les rebonds sont vendus.</span>'+
+        '<span style="color:var(--red)">15h-16h</span><span><strong>Maximal</strong> — les rebonds de fin de session sont vendus structurellement.</span>'+
+      '</div>'+
+      '<strong>Impact :</strong> Long calls = vent contraire. Short calls / credit call spread = edge structurel.',
+
+    neutre:
+      '<strong style="color:var(--text3)">NEUTRE / MIXTE</strong><br><br>'+
+      'Pas de dominante claire. Gamma et vanna dominent les flux ce jour. '+
+      'Analyser le carnet et le momentum pour la direction.'
+  };
+
+  c.innerHTML =
+    '<div style="background:var(--bg3);border-radius:6px;padding:10px;border:1px solid '+col+'40">'+
+    '<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:6px">'+schemeNote+'</div>'+
+    '<div style="font-size:11px;color:var(--text2);line-height:1.8">'+(bodies[eff]||bodies.neutre)+'</div>'+
+    '</div>';
+}
+
+// ─── VANNA DISPLAY ────────────────────────────────────────────
+function renderVanna(){
+  var c=el('vanna-display'); if(!c) return;
+  var d=SESSION.vannaDir||'neutral';
+  var vix=SESSION.vix||23;
+  var sp=SESSION.spot||6862;
+
+  var bodies={
+    bullish:
+      '<strong style="color:var(--green)">VANNA HAUSSIÈRE — VIX en baisse</strong><br><br>'+
+      '<strong>Mécanisme :</strong> Vanna = dΔ/dσ. Quand la vol implicite (σ) baisse, le delta des calls <em>augmente</em> au-delà de ce que le modèle Black-Scholes prédit. '+
+      'Les dealers doivent acheter davantage de sous-jacent pour rester delta-neutres → pression acheteuse supplémentaire.<br><br>'+
+      '<strong>Quantification avec VIX '+vix.toFixed(1)+' :</strong><br>'+
+      '<div style="margin:6px 0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:10px">'+
+        '<span style="color:var(--text3)">VIX −0.5pt</span><span>Calls sur-performent delta de ~5-8%</span>'+
+        '<span style="color:var(--gold)">VIX −1pt</span><span>Calls sur-performent de ~10-15%</span>'+
+        '<span style="color:var(--green)">VIX −2pts</span><span>Calls sur-performent de ~20-30%</span>'+
+        '<span style="color:var(--red)">VIX +1pt</span><span>Calls souffrent doublement (delta + vanna négative)</span>'+
+      '</div>'+
+      '<strong>Impact tes options :</strong><br>'+
+      '→ Long call + VIX qui baisse = <strong style="color:var(--green)">jackpot</strong> (delta + vanna)<br>'+
+      '→ Long put + VIX qui baisse = double peine → fermer rapidement si VIX ne monte pas<br>'+
+      '→ <strong style="color:var(--orange)">Alerte :</strong> si VIX remonte intraday, vanna s\'inverse → méfiance immédiate sur les calls',
+
+    bearish:
+      '<strong style="color:var(--red)">VANNA BAISSIÈRE — VIX en hausse</strong><br><br>'+
+      '<strong>Mécanisme :</strong> VIX monte → σ augmente → delta des puts augmente au-delà du modèle. '+
+      'Pression vendeuse supplémentaire sur le sous-jacent.<br><br>'+
+      '<strong>Quantification :</strong><br>'+
+      '<div style="margin:6px 0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:10px">'+
+        '<span style="color:var(--gold)">VIX +0.5pt</span><span>Puts sur-performent delta de ~5-8%</span>'+
+        '<span style="color:var(--orange)">VIX +1pt</span><span>Puts sur-performent de ~15-25%</span>'+
+        '<span style="color:var(--red)">VIX +2pts</span><span>Puts sur-performent de ~30-40%</span>'+
+      '</div>'+
+      '<strong>Impact :</strong> Long put = double bénéfice si VIX monte. Long call = double pénalité. '+
+      '<strong style="color:var(--red)">Ne jamais acheter de calls si VIX en trend haussier.</strong>',
+
+    neutral:
+      '<strong style="color:var(--text3)">VANNA NEUTRE — VIX stable</strong><br><br>'+
+      'Pas d\'effet directionnel vanna. Le delta des options suit le modèle standard. '+
+      'Baser les décisions sur gamma (amplification) et charm (temps). '+
+      'Surveiller tout mouvement du VIX > ±0.5pt pour réévaluer.'
+  };
+
+  c.innerHTML =
+    '<div style="background:var(--bg3);border-radius:6px;padding:10px;border:1px solid '+(d==='bullish'?'var(--green)':d==='bearish'?'var(--red)':'var(--text3)')+'40">'+
+    '<div style="font-size:11px;color:var(--text2);line-height:1.85">'+(bodies[d]||bodies.neutral)+'</div>'+
+    '</div>';
+}
+
+// ─── DEALER ANALYSIS (panneau central droite) ─────────────────
+function renderDealerAnalysis(){
+  var c=el('dealer-analysis'); if(!c) return;
+  var sp=SESSION.spot||6862, flip=SESSION.flip||6819;
+  var cw=SESSION.cwall||6950, pw=SESSION.pwall||6760;
+  var str=SESSION.straddle||56.10, charm=SESSION.charmEffect||'expansif';
+  var regime=SESSION.regime||'transition';
+  var vanna=SESSION.vannaDir||'bullish';
+  var vix=SESSION.vix||23, pcr=SESSION.pcr||1.1;
+  var vpoc=SESSION.vpoc.d||6804, vah=SESSION.vah||6874, val=SESSION.val||6774;
+  var lhod=SESSION.sessions.lh||6895, llod=SESSION.sessions.ll||6842;
+  var upper=+(sp+str*0.5).toFixed(0), lower=+(sp-str*0.5).toFixed(0);
+  var distFlip=+(sp-flip).toFixed(1);
+
+  var blk=function(num,title,col,body){
+    return '<div style="margin-bottom:11px;padding:10px;border-radius:5px;background:var(--bg3);border-left:3px solid '+col+'">'+
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:5px">'+num+' '+title+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.85">'+body+'</div></div>';
+  };
+
+  var html='';
+
+  // ① RÉGIME GAMMA
+  var regCol=regime==='gneg'?'var(--red)':regime==='gpos'?'var(--green)':'var(--gold)';
+  var regBody;
+  if(regime==='transition'){
+    regBody=
+      '<strong style="color:var(--gold)">TRANSITION → POSITIF</strong> — Prix '+sp+' / Flip '+flip+
+      ' (<strong style="color:var(--green)">+'+(distFlip)+' pts</strong> au-dessus).<br><br>'+
+      '<strong>Mécanique :</strong> Le prix a franchi et tient le flip depuis le V-shape. '+
+      'Les dealers passent progressivement de short gamma à gamma neutre.<br><br>'+
+      '<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:10px;margin:6px 0">'+
+        '<span style="color:var(--red)">Avant flip</span><span>Dealers short gamma — amplifient tous les moves (×1.5-2 ATR)</span>'+
+        '<span style="color:var(--gold)">Au flip</span><span>Transition — instabilité maximale, sens peut basculer rapidement</span>'+
+        '<span style="color:var(--green)">Au-dessus flip</span><span>Amélioration — dealers réduisent leur short. Dips moins amplifiés.</span>'+
+        '<span style="color:var(--green)">Bien au-dessus</span><span>Gamma positif — dealers amortissent. Mean reversion domine.</span>'+
+      '</div>'+
+      '<strong style="color:var(--orange)">⚠ Risque critique :</strong> Close 15min sous flip '+flip+' = retour gamma négatif IMMÉDIAT. '+
+      'Changer de biais, fermer les longs, stop sur tous les calls. Le flip est la frontière de tout le contexte.';
+  } else if(regime==='gneg'){
+    regBody=
+      '<strong style="color:var(--red)">GAMMA NÉGATIF</strong> — Prix sous flip '+flip+'.<br><br>'+
+      'Dealers short gamma → amplifient TOUS les moves (hausses et baisses). ATR effectif ≈ 1.5-2× le théorique.<br><br>'+
+      '→ Chaque hausse → dealers achètent encore plus de delta (amplifient la hausse)<br>'+
+      '→ Chaque baisse → dealers vendent (amplifient la baisse)<br><br>'+
+      '<strong>Impact trading :</strong> Stops plus larges obligatoires. Long options directionnelles = edge. Credit spreads = dangereux.';
+  } else {
+    regBody=
+      '<strong style="color:var(--green)">GAMMA POSITIF</strong> — Prix bien au-dessus du flip '+flip+'.<br><br>'+
+      'Dealers long gamma → amortissent TOUS les moves. Mean reversion domine.<br><br>'+
+      '→ Chaque hausse → dealers vendent delta (freine)<br>'+
+      '→ Chaque baisse → dealers achètent (soutient)<br><br>'+
+      '<strong>Impact trading :</strong> Credit spreads = edge maximum. Long options = theta te détruit. Range trading favorable.';
+  }
+  html+=blk('①','RÉGIME GAMMA',regCol,regBody);
+
+  // ② CHARM
+  var charmCol=charm==='expansif'?'var(--green)':charm==='suppressif'?'var(--accent)':'var(--text3)';
+  var charmBody=charm==='expansif'?
+    '<strong style="color:var(--green)">EXPANSIF (Jaune)</strong> — Dealers accumulent delta LONG mécaniquement.<br><br>'+
+    'Support invisible mais réel : chaque heure qui passe = plus de pression acheteuse dealer.<br><br>'+
+    '<strong>Conséquence pratique :</strong><br>'+
+    '→ Dips de 9h-11h : charm modéré — autres flows peuvent l\'emporter<br>'+
+    '→ Dips de 13h-15h : charm fort — rebonds quasi systématiques<br>'+
+    '→ Dips de 15h-16h : charm maximal — floor structurel en fin de session<br><br>'+
+    '<strong>Ce que ça change pour tes trades :</strong><br>'+
+    '→ Buy the dip = alignement avec le flux dealer. Edge réel.<br>'+
+    '→ Short la force après 14h = contre le vent mécanique croissant. Catalyst requis.':
+    charm==='suppressif'?
+    '<strong style="color:var(--accent)">SUPPRESSIF (Bleu)</strong> — Dealers vendent delta mécaniquement.<br><br>'+
+    '→ Rebonds de fin de session vendus structurellement<br>'+
+    '→ Long calls perdent leur edge au fil des heures<br>'+
+    '→ Short calls / credit spreads = vent favorable croissant':
+    '<strong style="color:var(--text3)">NEUTRE</strong> — Pas d\'effet directional charm. Gamma et vanna dominent.';
+  html+=blk('②','CHARM — VOLSIGNALS '+SESSION.charmColor.toUpperCase(),charmCol,charmBody);
+
+  // ③ VANNA
+  var vannaCol=vanna==='bullish'?'var(--green)':vanna==='bearish'?'var(--red)':'var(--text3)';
+  var vannaBody=vanna==='bullish'?
+    '<strong style="color:var(--green)">HAUSSIÈRE — VIX '+vix.toFixed(1)+' en baisse</strong><br><br>'+
+    'Chaque −1pt VIX = pression acheteuse supplémentaire ~'+Math.round(sp*0.0012)+' pts sur le marché (via rebalancement dealer).<br><br>'+
+    '<strong>Setups favorisés :</strong> Long call, debit call spread, credit put spread<br>'+
+    '<strong>À éviter :</strong> Long put sans VIX en hausse confirmée. Credit call spread si VIX en tendance baissière.<br><br>'+
+    '<strong style="color:var(--orange)">Alerte retournement :</strong> Si VIX repasse au-dessus de '+(vix+1).toFixed(1)+' sur 15min = vanna s\'inverse → réduire exposition calls immédiatement.':
+    vanna==='bearish'?
+    '<strong style="color:var(--red)">BAISSIÈRE — VIX '+vix.toFixed(1)+' en hausse</strong><br><br>'+
+    'Chaque +1pt VIX = puts sur-performent leur delta de ~15-25%. Double levier sur les puts.<br><br>'+
+    '<strong>Setups favorisés :</strong> Long put, debit put spread, credit call spread<br>'+
+    '<strong>À éviter :</strong> Long call si VIX en trend haussier.':
+    '<strong style="color:var(--text3)">NEUTRE</strong> — VIX stable. Aucun effet vanna directionnel. Surveiller un break de VIX ± 0.5pt.';
+  html+=blk('③','VANNA — VIX '+vix.toFixed(1),vannaCol,vannaBody);
+
+  // ④ STRADDLE & PINNING
+  html+=blk('④','STRADDLE $'+str.toFixed(2)+' — GAMMA PINNING','var(--accent)',
+    'Range 0DTE actif : <strong style="color:var(--red)">'+upper+'</strong> ↑ · <strong style="color:var(--green)">'+lower+'</strong> ↓<br><br>'+
+    '<strong>Mécanique de pinning :</strong> Les MMs qui ont vendu des straddles sont short gamma ATM. '+
+    'Pour se couvrir ils vendent quand ça monte et achètent quand ça baisse → force qui <em>ancre</em> le prix près du strike ATM en fin de session.<br><br>'+
+    '<strong>Confluences critiques aujourd\'hui :</strong><br>'+
+    '<div style="margin:5px 0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:10px">'+
+      '<span style="color:var(--red)">Upper '+upper+'</span><span>≈ VAH '+vah+' + London HOD '+lhod+' → <strong>triple résistance</strong></span>'+
+      '<span style="color:var(--green)">Lower '+lower+'</span><span>≈ London LOD '+llod+' → double support dealer + volume London</span>'+
+      '<span style="color:var(--gold)">VPOC '+vpoc+'</span><span>Aimant principal — ~65% des sessions pin vers VPOC entre 15h-16h ET</span>'+
+    '</div>'+
+    '<strong>Règle d\'expiration :</strong> Prix très probablement entre '+(+lower+8).toFixed(0)+' et '+(+upper-8).toFixed(0)+' à 16h ET sauf catalyst macro.');
+
+  // ⑤ WALLS
+  html+=blk('⑤','CALLS WALL '+cw+' / PUTS WALL '+pw,'var(--red)',
+    '<strong style="color:var(--red)">Calls Wall '+cw+'</strong> — résistance dealer majeure.<br>'+
+    'Distance spot : <strong>+'+(cw-sp).toFixed(0)+' pts</strong>. '+
+    'Concentration exceptionnelle de calls vendus à ce strike. '+
+    'Les dealers se couvrent en vendant le sous-jacent si le prix s\'approche. '+
+    'Si dépassé avec fort volume = short squeeze → dealers forcés de racheter → cascade haussière possible.<br><br>'+
+    '<strong style="color:var(--green)">Puts Wall '+pw+'</strong> — support dealer massif.<br>'+
+    'Distance spot : <strong>−'+(sp-pw).toFixed(0)+' pts</strong>. '+
+    'Si touché = rebond mécanique quasi-certain (dealers acheteurs forcés). '+
+    'Seul un catalyst macro exceptionnel peut briser ce niveau.<br><br>'+
+    '<strong>Zone de trading : '+pw+' → '+cw+'</strong> ('+(cw-pw)+' pts de terrain). '+
+    'Au-delà de ces bornes = territoire de cascade dans les deux sens.');
+
+  // ⑥ PCR + SYNTHÈSE
+  var pcrColor=pcr>1.2?'var(--red)':pcr<0.8?'var(--green)':'var(--gold)';
+  var pcrLabel=pcr>1.2?'BEARISH FLOW':pcr<0.8?'BULLISH FLOW':'NEUTRE';
+  var pcrDetail=pcr>1.2?
+    'Plus de puts achetés que de calls → clients se couvrent ou parient baissier. '+
+    'Contexte de peur ou hedge institutionnel. Peut précéder une compression haussière si peur exagérée.':
+    pcr<0.8?
+    'Plus de calls que de puts → momentum spéculatif haussier. '+
+    'Peut signaler un top si exubérance excessive (PCR < 0.6).':
+    'Equilibre relatif calls/puts. Pas de biais directionnel fort côté flow options.';
+
+  var synthColor=(charm==='expansif'&&vanna==='bullish')?'var(--green)':
+                 (charm==='suppressif'&&vanna==='bearish')?'var(--red)':'var(--gold)';
+  var synthText=(charm==='expansif'&&vanna==='bullish')?
+    'TRIPLE ALIGNEMENT HAUSSIER — Gamma amélioration + Charm expansif + Vanna bullish. '+
+    'Les 3 forces dealer poussent dans le même sens. Edge maximum sur les longs sur pullbacks. '+
+    'Ne shorter que sur catalyst fort et confirmation stricte.':
+    (charm==='suppressif'&&vanna==='bearish')?
+    'TRIPLE ALIGNEMENT BAISSIER — Gamma négatif + Charm suppressif + Vanna bearish. '+
+    'Edge maximum sur les shorts sur rebonds. Les longs nécessitent un catalyst fort.':
+    'CONTEXTE MIXTE — Forces dealer ne convergent pas. Sélection rigoureuse des setups. '+
+    'Réduire la taille, attendre les confluences les plus fortes.';
+
+  html+=blk('⑥','PCR '+pcr.toFixed(2)+' — SYNTHÈSE GLOBALE','var(--purple)',
+    '<strong style="color:'+pcrColor+'">'+pcrLabel+' ('+pcr.toFixed(2)+')</strong> — '+pcrDetail+'<br><br>'+
+    '<strong style="color:'+synthColor+'">◉ VERDICT DEALER : '+synthText+'</strong>');
+
+  c.innerHTML=html;
+}
+
+// ─── DEALER COMMENT (HunterEye) ───────────────────────────────
+function renderDealerComment(){
+  var c=el('dealer-comment-body'); if(!c) return;
+  var sp=SESSION.spot||6862, flip=SESSION.flip||6819;
+  var cw=SESSION.cwall||6950, pw=SESSION.pwall||6760;
+  var str=SESSION.straddle||56.10, charm=SESSION.charmEffect||'expansif';
+  var regime=SESSION.regime||'transition', vanna=SESSION.vannaDir||'bullish';
+  var vix=SESSION.vix||23, pcr=SESSION.pcr||1.1;
+  var vpoc=SESSION.vpoc.d||6804, vah=SESSION.vah||6874, val=SESSION.val||6774;
+  var lhod=SESSION.sessions.lh||6895, llod=SESSION.sessions.ll||6842;
+  var upper=+(sp+str*0.5).toFixed(0), lower=+(sp-str*0.5).toFixed(0);
+
+  var blk=function(t,col,body){
+    return '<div style="margin-bottom:9px;padding:9px 11px;background:var(--bg3);border-radius:5px;border-left:3px solid '+col+'">'+
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:1.5px;color:var(--text3);margin-bottom:4px">'+t+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);line-height:1.85">'+body+'</div></div>';
+  };
+  var html='';
+
+  // LECTURE GLOBALE
+  var isTriple=(charm==='expansif'&&vanna==='bullish'&&(regime==='transition'||regime==='gpos'));
+  html+=blk('LECTURE GLOBALE DEALER — 05/03/26',isTriple?'var(--green)':'var(--gold)',
+    isTriple?
+    '<strong style="color:var(--green)">Configuration TRIPLE ALIGNEMENT HAUSSIER</strong> — les 3 forces dealer convergent.<br><br>'+
+    '<strong>① Gamma Transition→Positif :</strong> Prix +'+(sp-flip)+' pts au-dessus du flip '+flip+'. '+
+    'Les dealers réduisent leur short gamma. Chaque hausse est moins combattue, chaque dip est moins amplifié.<br>'+
+    '<strong>② Charm Expansif :</strong> Pression acheteuse mécanique qui s\'intensifie heure après heure. '+
+    'Vent favorable maximal entre 13h30 et 16h ET.<br>'+
+    '<strong>③ Vanna Haussière :</strong> VIX en baisse → calls sur-performent leur delta. '+
+    'Si VIX baisse de 1pt intraday = ~10-15% de P&L supplémentaire sur les calls.<br><br>'+
+    '<strong style="color:var(--green)">Traduction pratique :</strong> Les longs sur dips ont 3 forces dealer derrière eux. '+
+    'Les shorts nécessitent un catalyst externe fort + les 3 forces doivent s\'affaiblir simultanément.':
+    '<strong style="color:var(--gold)">Configuration mixte</strong> — les forces dealer ne convergent pas toutes dans le même sens. '+
+    'Sélection rigoureuse. Taille réduite. Attendre les confluences les plus nettes avant d\'entrer.');
+
+  // COMMENT LIRE LE GEX VISUEL
+  html+=blk('COMMENT LIRE LA VISUALISATION GEX','var(--accent)',
+    '<strong style="color:var(--red)">Ligne rouge épaisse — Calls Wall '+cw+'</strong><br>'+
+    'C\'est la résistance dealer ultime. Très grand nombre de calls vendus à ce strike. '+
+    'Si le prix s\'approche, les dealers vendent le sous-jacent pour se couvrir. '+
+    '<strong>Distance actuelle : +'+(cw-sp).toFixed(0)+' pts.</strong> '+
+    'En transition gamma, ce niveau peut être testé si VAH '+vah+' + upper straddle '+upper+' sont franchis.<br><br>'+
+    '<strong style="color:var(--green)">Ligne verte épaisse — Puts Wall '+pw+'</strong><br>'+
+    'Support dealer ultime. Dealers acheteurs forcés si le prix descend. '+
+    '<strong>Distance actuelle : −'+(sp-pw).toFixed(0)+' pts.</strong> '+
+    'Floor quasi-indestructible sauf catalyst macro exceptionnel (Fed surprise, flash crash).<br><br>'+
+    '<strong style="color:var(--orange)">Ligne orange tiretée — Flip '+flip+'</strong><br>'+
+    'La frontière qui change tout. Au-dessus = amélioration gamma. En dessous = retour gamma négatif. '+
+    '<strong>Surveiller cette ligne en permanence.</strong> Un close 15min sous '+flip+' est le signal de sortie de tous les longs.<br><br>'+
+    '<strong style="color:var(--accent)">Lignes bleues tiretées — Bornes straddle '+lower+'/'+upper+'</strong><br>'+
+    'Range d\'expiration 0DTE. Les dealers défendent ces bornes (pinning). '+
+    'Break confirmé = momentum directionnel. À l\'intérieur = mean reversion + theta.<br><br>'+
+    '<strong style="color:var(--purple)">Lignes violettes — Strikes custom bookmap</strong><br>'+
+    'Ask walls ou bid stacks importants identifiés sur le carnet d\'ordres. Ajoute-les via le formulaire.');
+
+  // STRATÉGIE SELON POSITION / NIVEAU PRIX
+  var pos_vs_vah = sp>=vah?'AU-DESSUS':sp>=(vah-15)?'APPROCHE':sp>=lower?'MID-RANGE':'BAS';
+  html+=blk('POSITION PRIX '+sp+' — LECTURE CONTEXTUELLE','var(--gold)',
+    pos_vs_vah==='AU-DESSUS'?
+    '<strong style="color:var(--red)">Prix au-dessus du VAH '+vah+'</strong> — zone déséquilibrée haussière. '+
+    '70% du volume a été fait EN DESSOUS de ce niveau. Le prix trade en "territoire premium".<br><br>'+
+    '<strong>Ce que ça implique :</strong><br>'+
+    '→ Le momentum haussier doit être maintenu par du volume réel — pas de dérive<br>'+
+    '→ La prochaine résistance significative est London HOD '+lhod+' / upper straddle '+upper+'<br>'+
+    '→ Si rejet ici : retour probable vers VAH '+vah+' puis VPOC '+vpoc+' (aimant gravitaire)<br>'+
+    '→ Ne pas acheter la force au-dessus de '+upper+' sans confirmation bookmap clair':
+    pos_vs_vah==='APPROCHE'?
+    '<strong style="color:var(--gold)">Prix en approche du VAH '+vah+'</strong> — zone de décision critique.<br><br>'+
+    'VAH = résistance de valeur (70% volume en dessous). Deux scénarios :<br>'+
+    '→ <strong style="color:var(--green)">Break avec volume</strong> : acceptance au-dessus, extension vers '+upper+'/'+lhod+'<br>'+
+    '→ <strong style="color:var(--red)">Rejection sans volume</strong> : retour vers VPOC '+vpoc+', potentiellement '+lower+'<br>'+
+    'Ne pas anticiper. Attendre la clôture 15min au-dessus ou en dessous.':
+    '<strong style="color:var(--gold)">Prix en mid-range '+lower+'-'+vah+'</strong> — zone de fair value.<br><br>'+
+    'VPOC '+vpoc+' est l\'aimant gravitaire. Dans cette zone, les moves sont bidirectionnels. '+
+    'Pas de biais clair sur la direction. Attendre un test des extrêmes.');
+
+  // SETUPS ACTIONNABLES VIA GEX
+  html+=blk('SETUPS DÉRIVÉS DU GEX — ACTIONNABLES','var(--green)',
+    '<strong>Setup GEX-A ★★★★★ : Long sur bounce lower '+lower+' / London LOD '+llod+'</strong><br>'+
+    'Logique : Lower straddle + London LOD + charm expansif + puts wall distance '+(sp-pw)+' pts en dessous = floor triple. '+
+    'Dealers acheteurs mécaniques + pinning straddle = rebond quasi-systématique.<br>'+
+    'Entrée : absorption bid visible + mèche rejetée + clôture 5min > '+(+lower+2).toFixed(0)+'. Stop < '+(+lower-4).toFixed(0)+'. Cible T1 : VPOC '+vpoc+'.<br><br>'+
+    '<strong>Setup GEX-B ★★★★☆ : Long break VAH '+vah+' avec volume</strong><br>'+
+    'Logique : Break de résistance de valeur + charm expansif qui s\'intensifie = momentum dealer.<br>'+
+    'Entrée : clôture 15min > '+vah+' + volume > moyenne. Stop : retour < '+(+vah-4).toFixed(0)+'. Cible : upper '+upper+' / London HOD '+lhod+'.<br><br>'+
+    '<strong>Setup GEX-C ★★★☆☆ : Credit call spread rejection upper '+upper+' / London HOD '+lhod+'</strong><br>'+
+    'Logique : Triple résistance (upper straddle + London HOD + VAH) = pinning naturel. Primes élevées = edge vendeur.<br>'+
+    'Structure : Short call '+upper+' / Long call '+(+upper+15).toFixed(0)+'. Stop : close 15min > '+(+upper+8).toFixed(0)+'.<br><br>'+
+    '<strong style="color:var(--red)">⛔ Setup à ne jamais prendre :</strong> Short sous le flip '+flip+' si charm expansif actif. '+
+    'Dealers acheteurs mécaniques écrasent les shorts à l\'approche de ce niveau.');
+
+  c.innerHTML=html;
+}
+
+function drawGEXBars(){
+  var canvas=el('gex-bar-canvas'); if(!canvas) return;
+  var wrap=el('gex-bar-wrap');
+  var W=Math.max(wrap.offsetWidth||0,300);
+  var H=Math.max(wrap.offsetHeight||0,800);
+  canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  ctx.fillStyle='#04070b'; ctx.fillRect(0,0,W,H);
+
+  var sp=SESSION.spot||6831;
+  var flip=SESSION.flip||6853;
+  var cw=SESSION.cwall||6950;
+  var pw=SESSION.pwall||6650;
+  var str=SESSION.straddle||63;
+
+  // Tous les niveaux à afficher
+  var niveaux=[];
+  niveaux.push({p:cw,   label:'Calls Wall',  col:'#f03050', w:4, dash:[]});
+  niveaux.push({p:flip, label:'⬥ Flip',      col:'#f07820', w:3, dash:[8,4]});
+  if(str){
+    niveaux.push({p:+(sp+str*0.5).toFixed(0), label:'Upper STR', col:'#00c8f0', w:2, dash:[5,3]});
+    niveaux.push({p:+(sp-str*0.5).toFixed(0), label:'Lower STR', col:'#00c8f0', w:2, dash:[5,3]});
+  }
+  SESSION.gexStrikes.forEach(function(s){
+    if(s.price) niveaux.push({p:+s.price, label:s.note.slice(0,20), col:'#b080ff', w:1, dash:[2,3]});
+  });
+  niveaux.push({p:pw, label:'Puts Wall', col:'#00e87a', w:4, dash:[]});
+
+  // Echelle : centré sur spot ± 130pts
+  var center=sp, RNG=130;
+  var minP=center-RNG, maxP=center+RNG;
+
+  // Marges : labels à gauche, prix à droite
+  var ML=100, MR=55, MT=20, MB=20;
+  var chartH=H-MT-MB;
+  var toY=function(p){ return MT + (maxP-p)/(maxP-minP)*chartH; };
+
+  // Fond dégradé gamma
+  var grad=ctx.createLinearGradient(0,0,0,H);
+  if(sp<flip){
+    grad.addColorStop(0,'rgba(240,48,80,0.08)');
+    grad.addColorStop(1,'rgba(4,7,11,0)');
+  } else {
+    grad.addColorStop(0,'rgba(0,232,122,0.06)');
+    grad.addColorStop(1,'rgba(4,7,11,0)');
+  }
+  ctx.fillStyle=grad; ctx.fillRect(ML,MT,W-ML-MR,chartH);
+
+  // Grille horizontale tous les 25pts
+  ctx.setLineDash([2,5]);
+  for(var gp=Math.ceil(minP/25)*25; gp<=maxP; gp+=25){
+    var gy=toY(gp); if(gy<MT||gy>H-MB) continue;
+    ctx.strokeStyle='rgba(74,98,120,0.25)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ML,gy); ctx.lineTo(W-MR,gy); ctx.stroke();
+    // Prix sur l'axe droite
+    ctx.fillStyle='rgba(74,98,120,0.6)';
+    ctx.font='9px Share Tech Mono,monospace'; ctx.textAlign='left';
+    ctx.fillText(gp, W-MR+4, gy+3);
+  }
+  ctx.setLineDash([]);
+
+  // Dessiner chaque niveau
+  var usedY={};
+  niveaux.sort(function(a,b){return b.p-a.p;}).forEach(function(lv){
+    var inR=(lv.p>=minP&&lv.p<=maxP);
+    var y=Math.max(MT+2,Math.min(H-MB-2,toY(lv.p)));
+
+    // Ligne
+    ctx.strokeStyle=lv.col;
+    ctx.lineWidth=lv.w;
+    ctx.globalAlpha=inR?1:0.35;
+    ctx.setLineDash(lv.dash);
+    ctx.beginPath(); ctx.moveTo(ML,y); ctx.lineTo(W-MR,y); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+
+    // Label à gauche — anti-overlap
+    var ly=y;
+    for(var k=0;k<30;k++){
+      var rk=Math.round(ly);
+      if(!usedY[rk]&&!usedY[rk-1]&&!usedY[rk+1]){usedY[rk]=1;break;}
+      ly+=(lv.p>=center?-11:11);
+    }
+    ly=Math.max(MT+6,Math.min(H-MB-4,ly));
+
+    // Fond label
+    var labelW=ctx.measureText(lv.label).width+8;
+    ctx.fillStyle='rgba(4,7,11,0.75)';
+    ctx.fillRect(2,ly-9,labelW+4,13);
+
+    // Texte label
+    ctx.fillStyle=lv.col;
+    ctx.font=(lv.w>=3?'bold ':'')+'10px Share Tech Mono,monospace';
+    ctx.textAlign='left';
+    var arrow=!inR?(lv.p>maxP?'▲ ':'▼ '):'';
+    ctx.fillText(arrow+lv.label, 4, ly+1);
+
+    // Prix inline
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.font='9px Share Tech Mono,monospace';
+    ctx.fillText(lv.p, 4, ly+10);
+
+    // Point sur la ligne
+    if(inR){
+      ctx.beginPath(); ctx.arc(ML,y,3,0,Math.PI*2);
+      ctx.fillStyle=lv.col; ctx.fill();
+    }
+  });
+
+  // SPOT — ligne blanche en surimpression
+  if(sp){
+    var sy=Math.max(MT,Math.min(H-MB,toY(sp)));
+    ctx.shadowColor='rgba(255,255,255,0.8)'; ctx.shadowBlur=8;
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.5; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(ML,sy); ctx.lineTo(W-MR,sy); ctx.stroke();
+    ctx.shadowBlur=0;
+    // Badge SPOT
+    var bx=ML+8, bw=72, bh=18;
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(bx,sy-bh/2,bw,bh);
+    ctx.fillStyle='#04070b';
+    ctx.font='bold 11px Orbitron,monospace';
+    ctx.textAlign='center';
+    ctx.fillText(sp.toFixed(2),bx+bw/2,sy+4);
+  }
+}
+
+function addGEXStrike(){
+  var p=parseFloat(el('gex-s-price').value), n=el('gex-s-note').value.trim();
+  if(!p) return;
+  SESSION.gexStrikes.push({price:p,note:n});
+  el('gex-s-price').value=''; el('gex-s-note').value='';
+  renderGEXStrikes(); drawGEXBars();
+}
+
+function renderGEXStrikes(){
+  var c=el('gex-strikes-list'); if(!c) return;
+  if(!SESSION.gexStrikes.length){c.innerHTML='<div style="padding:8px 12px;color:var(--text3);font-size:11px">Ajoute les strikes importants (ask walls bookmap, bids massifs...)</div>';return;}
+  c.innerHTML=SESSION.gexStrikes.sort(function(a,b){return b.price-a.price;}).map(function(s,i){
+    return '<div style="display:flex;gap:10px;padding:5px 12px;border-bottom:1px solid var(--border);align-items:center">'+
+      '<span style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;color:var(--purple);min-width:52px">'+s.price+'</span>'+
+      '<span style="font-size:11px;color:var(--text2);flex:1">'+s.note+'</span>'+
+      '<span style="cursor:pointer;color:var(--text3)" onclick="SESSION.gexStrikes.splice('+i+',1);renderGEXStrikes();drawGEXBars()">✕</span>'+
+    '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FUTURES
+// ═══════════════════════════════════════════════════════════════
+function updateFutures(){
+  SESSION.vpoc.d=parseFloat(el('fi-vpoc-d').value)||SESSION.vpoc.d;
+  SESSION.vpoc.w=parseFloat(el('fi-vpoc-w').value)||SESSION.vpoc.w;
+  SESSION.vah=parseFloat(el('fi-vah').value)||SESSION.vah;
+  SESSION.val=parseFloat(el('fi-val').value)||SESSION.val;
+  SESSION.dayType=el('fi-day-type').value||SESSION.dayType;
+  SESSION.tpoNotes=el('fi-tpo-notes').value;
+  setText('f-vpoc-d',SESSION.vpoc.d||'—'); setText('f-vpoc-w',SESSION.vpoc.w||'—');
+  setText('f-vah',SESSION.vah||'—'); setText('f-val',SESSION.val||'—');
+  setText('f-day-type',SESSION.dayType||'—');
+  renderFuturesSetups(); updateDayTypeDesc(); renderFuturesComment();
+  // Key levels panel
+  var kl = el('f-key-levels');
+  if(kl){
+    var sp = SESSION.spot||0;
+    kl.innerHTML = [
+      {n:'VPOC Daily', p:SESSION.vpoc&&SESSION.vpoc.d, col:'var(--gold)'},
+      {n:'VPOC Weekly', p:SESSION.vpoc&&SESSION.vpoc.w, col:'var(--gold)'},
+      {n:'VAH', p:SESSION.vah, col:'var(--red)'},
+      {n:'VAL', p:SESSION.val, col:'var(--green)'},
+      {n:'Flip', p:SESSION.flip, col:'var(--orange)'},
+      {n:'Calls Wall', p:SESSION.cwall, col:'var(--red)'},
+      {n:'Puts Wall', p:SESSION.pwall, col:'var(--green)'},
+    ].filter(function(x){return x.p;}).map(function(x){
+      var dist = sp ? (x.p - sp).toFixed(1) : '—';
+      var distStr = sp ? (x.p>sp ? '<span style="color:var(--red)">+'+dist+'</span>' : '<span style="color:var(--green)">'+dist+'</span>') : '';
+      return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:2px 0">'+
+        '<span style="color:'+x.col+'">'+x.n+'</span>'+
+        '<span style="font-family:Share Tech Mono,monospace;color:var(--text2)">'+x.p+' '+distStr+'</span>'+
+      '</div>';
+    }).join('');
+  }
+  // Sessions recap
+  var sr = el('f-sessions-recap');
+  if(sr && SESSION.sessions){
+    var s = SESSION.sessions;
+    sr.innerHTML = (s.lh?'<div>🟥 London HOD <strong style="color:var(--red)">'+s.lh+'</strong> · LOD <strong style="color:var(--green)">'+s.ll+'</strong></div>':'')+
+      (s.nyh?'<div>🟦 NY HOD <strong style="color:var(--red)">'+s.nyh+'</strong> · LOD <strong style="color:var(--green)">'+s.nyl+'</strong></div>':'')+
+      (s.ah?'<div>⬜ Asia HOD <strong style="color:var(--red)">'+s.ah+'</strong> · LOD <strong style="color:var(--green)">'+s.al+'</strong></div>':'');
+  }
+}
+
+function updateIB(){
+  SESSION.ibh=parseFloat(el('fi-ibh').value)||0;
+  SESSION.ibl=parseFloat(el('fi-ibl').value)||0;
+  var ibR=el('f-ib-range');
+  if(ibR) ibR.textContent=SESSION.ibh&&SESSION.ibl?(SESSION.ibh-SESSION.ibl).toFixed(1)+' pts':'—';
+  var ext=el('ib-extensions'); if(!ext) return;
+  if(!SESSION.ibh||!SESSION.ibl){ext.innerHTML='—';return;}
+  var r=SESSION.ibh-SESSION.ibl;
+  ext.innerHTML='Range IB : <strong>'+r.toFixed(1)+' pts</strong><br>'+
+    'Extension 100% : '+SESSION.ibh+' / '+SESSION.ibl+'<br>'+
+    'Extension 150% : '+(SESSION.ibh+r*.5).toFixed(2)+' / '+(SESSION.ibl-r*.5).toFixed(2)+'<br>'+
+    'Extension 200% : '+(SESSION.ibh+r).toFixed(2)+' / '+(SESSION.ibl-r).toFixed(2)+'<br>'+
+    (r<30?'<span style="color:var(--orange)">IB étroit → forte extension attendue post 10h30 ET</span>':
+     r>60?'<span style="color:var(--orange)">IB large → journée volatile, range trading dans l\'IB</span>':
+     '<span style="color:var(--green)">IB normal → surveiller le break avec volume</span>');
+}
+
+function updateDayTypeDesc(){
+  var c=el('day-type-desc'); if(!c) return;
+  var d=SESSION.dayType;
+  var vpoc=SESSION.vpoc.d||6804, vah=SESSION.vah||6874, val=SESSION.val||6774;
+  var ibh=SESSION.ibh||6880, ibl=SESSION.ibl||6804;
+  var nyl=SESSION.sessions.nyl||6757;
+  var flip=SESSION.flip||6819;
+  var ibR=+(ibh-ibl).toFixed(1);
+  var descs={
+    'Normal':
+      '<strong>Normal Day</strong> — L\'IB définit la référence, puis extension d\'UN seul côté après 10h30 ET. '+
+      'La direction du premier break hors IB est maintenue ~70% du temps.<br><br>'+
+      '<strong>Comment trader :</strong><br>'+
+      '→ Attends le break de '+ibh+' ou '+ibl+' avec volume (pas avant 10h30 ET)<br>'+
+      '→ Entre sur le pullback vers l\'IB après le break (premier retest)<br>'+
+      '→ Stop sous le niveau hors IB · Cible : VPOC '+vpoc+' ou VAH '+vah+'<br>'+
+      '<strong style="color:var(--orange)">Piège classique :</strong> entrer pendant l\'IB (9h30-10h30 ET) = stop chassé.',
+
+    'Trend':
+      '<strong>Trend Day</strong> — Ouverture + extension continue, corrections minimes (<30% du range). '+
+      'Rare mais le plus rentable si identifié tôt.<br><br>'+
+      '<strong>Signaux d\'identification :</strong><br>'+
+      '→ Pas de retour vers l\'IB après le break<br>'+
+      '→ Chaque bougie clôture proche de son extrême<br>'+
+      '→ Volume croissant dans le sens du trend<br><br>'+
+      '<strong>Comment trader :</strong><br>'+
+      '→ Ne pas shorter la force. Ne pas acheter les pullbacks profonds.<br>'+
+      '→ Entrer sur les micro-pullbacks (1-3 bougie) sans attendre un retrace profond<br>'+
+      '→ Cible minimale : +2× IB range depuis l\'ouverture<br>'+
+      '<strong style="color:var(--red)">Erreur fatale :</strong> shorter un Trend Day = pertes illimitées.',
+
+    'Double Distribution':
+      '<strong>Double Distribution</strong> — Deux VA distinctes séparées par une zone de très faible volume (no-trade zone).<br><br>'+
+      '<strong>Structure :</strong><br>'+
+      '→ VA1 (matin) → rotation lunch → VA2 (après-midi)<br>'+
+      '→ Le midpoint entre les deux VA = zone piège<br><br>'+
+      '<strong>Comment trader :</strong><br>'+
+      '→ Entrées UNIQUEMENT aux extrêmes des deux VA avec rejection<br>'+
+      '→ Si tu es dans le no-trade zone : <strong style="color:var(--red)">ferme et attends</strong><br>'+
+      '→ Cible : VPOC de chaque VA respective<br>'+
+      '<strong style="color:var(--orange)">Timing :</strong> La 2e distribution se forme généralement 13h30-15h ET.',
+
+    'Neutral':
+      '<strong>Neutral Day</strong> — Extension des deux côtés de l\'IB puis retour au centre. Marché indécis.<br><br>'+
+      '<strong>Caractéristiques :</strong><br>'+
+      '→ Extension haut puis bas (ou inverse) — les deux côtés sont testés<br>'+
+      '→ Clôture au milieu du range journalier<br>'+
+      '→ Volume équilibré — ni les bulls ni les bears ne contrôlent<br><br>'+
+      '<strong>Comment trader :</strong><br>'+
+      '→ Iron condor 0DTE = setup idéal<br>'+
+      '→ Ne pas chasser les breakouts — ils reviennent<br>'+
+      '→ Fade les extensions aux extrêmes avec stop serré<br>'+
+      '→ Cible : retour VPOC '+vpoc,
+
+    'Outside':
+      '<strong style="color:var(--gold)">OUTSIDE DAY — SESSION EN COURS 05/03/26</strong><br><br>'+
+      'Dépasse le High ET le Low de la session précédente (environ 2-3% des sessions). Structure la plus rare et la plus volatile.<br><br>'+
+      '<strong>Ce qui s\'est passé aujourd\'hui :</strong><br>'+
+      '① Spike bas à '+nyl+' (below LOD 03/03) — stops chassés massivement<br>'+
+      '② V-shape recovery immédiate — demande forte confirmée<br>'+
+      '③ Singles créés '+nyl+'-'+val+' — déséquilibre à combler (1-3 séances)<br>'+
+      '④ VPOC '+vpoc+' = aimant de clôture du jour<br><br>'+
+      '<strong>Règles spécifiques Outside Day :</strong><br>'+
+      '→ Ne pas shorter dans la moitié haute du range journalier<br>'+
+      '→ Ne pas loner dans la moitié basse<br>'+
+      '→ Entrées AUX EXTRÊMES uniquement (VAH '+vah+' pour short, LOD zone pour long)<br>'+
+      '→ IB large ('+ibR+' pts) → extensions PM limitées → range trading dans l\'IB favorisé<br><br>'+
+      '<strong style="color:var(--gold)">Stat :</strong> ~65% des Outside Day IB large clôturent dans l\'IB. VPOC '+vpoc+' = pin de clôture le plus probable.'
+  };
+  c.innerHTML=descs[d]||'Sélectionne le type de jour pour afficher l\'analyse.';
+}
+function updateCOT(){
+  var cl=parseFloat(el('fi-comm-l').value)||0, cs=parseFloat(el('fi-comm-s').value)||0;
+  var nl=parseFloat(el('fi-nc-l').value)||0, ns=parseFloat(el('fi-nc-s').value)||0;
+  SESSION.cot={cl:cl,cs:cs,nl:nl,ns:ns};
+  var c=el('cot-analysis'); if(!c) return;
+  var useCl=cl||SESSION.cot.cl||248000, useCs=cs||SESSION.cot.cs||312000;
+  var useNl=nl||SESSION.cot.nl||185000, useNs=ns||SESSION.cot.ns||156000;
+  var netC=useCl-useCs, netNC=useNl-useNs;
+  var cSentiment=netC>10000?'<strong style="color:var(--green)">Long net +'+netC.toLocaleString()+'</strong> (smart money haussier)':
+                  netC<-10000?'<strong style="color:var(--red)">Short net '+netC.toLocaleString()+'</strong> (smart money baissier/hedge)':
+                  '<strong style="color:var(--text3)">Neutre '+netC.toLocaleString()+'</strong>';
+  var ncSentiment=netNC>10000?'<strong style="color:var(--green)">Long net +'+netNC.toLocaleString()+'</strong> (spéculatifs momentum haussier)':
+                   netNC<-10000?'<strong style="color:var(--red)">Short net '+netNC.toLocaleString()+'</strong> (spéculatifs baissiers)':
+                   '<strong style="color:var(--text3)">Neutre '+netNC.toLocaleString()+'</strong>';
+  var align=(netC>0&&netNC>0)||(netC<0&&netNC<0);
+  c.innerHTML=
+    'Commercials (smart money) : '+cSentiment+'<br>'+
+    'Non-Comm (spéculatifs) : '+ncSentiment+
+    '<br><br>'+(align?
+      '<span style="color:var(--green)">✓ Alignement Comm/NonComm</span> — signal directionnel fort. Les deux catégories poussent dans le même sens. Structure solide.':
+      '<span style="color:var(--orange)">⚠ Divergence Comm/NonComm</span> — mains fortes et spéculatifs dans des directions opposées.')+
+    '<br><br><strong>Lecture experte :</strong> '+(netC<-10000&&netNC>10000?
+      'Divergence classique bearish : Commercials short (−'+Math.abs(netC).toLocaleString()+') = smart money se couvre ou parie baissier MT. '+
+      'Spéculatifs longs (+'+netNC.toLocaleString()+') = momentum / FOMO. '+
+      'Les Commercials ont tort à CT (ils hedgent des expositions), mais ont souvent raison à MT (2-8 semaines). '+
+      '<strong>Implication :</strong> Rebond V-shape = technique CT. Les Commercials utilisent probablement les hausses pour renforcer leurs shorts MT. '+
+      'Ne pas construire de position swing long dans ce contexte.':
+      netC>10000&&netNC>10000?
+      'Double signal haussier — structure favorable MT. Comercials long = smart money confirme la tendance. Non-Comm longs = momentum. Contexte idéal pour les longs swing.':
+      'Contexte mixte — analyser les extremes historiques pour mieux qualifier le signal.');
+}
+function updateRoll(){
+  var f=parseFloat(el('fi-roll-front').value)||0, b=parseFloat(el('fi-roll-back').value)||0;
+  var d=parseFloat(el('fi-roll-days').value)||0;
+  SESSION.roll={front:f,back:b,days:d};
+  if(!f||!b){setText('roll-display','—');return;}
+  var spread=+(b-f).toFixed(2), fv=+((f+b)/2).toFixed(2);
+  setVal('fi-roll-fv',fv);
+  el('roll-display')&&(el('roll-display').innerHTML=
+    'Spread : <strong>'+(spread>=0?'+':'')+spread+'</strong> pts · FV : <strong>'+fv+'</strong> · Jours : '+d+'<br>'+
+    (spread>0?'<span style="color:var(--accent)">Contango — ESM6 premium. Normal en taux positifs.</span>':'<span style="color:var(--orange)">Backwardation — vérifier ex-div ou stress marché.</span>'));
+}
+
+function renderFuturesSetups(){
+  var c=el('f-setups'); if(!c) return;
+  var r=SESSION.regime, vpoc=SESSION.vpoc.d, vpocW=SESSION.vpoc.w;
+  var vah=SESSION.vah, val=SESSION.val;
+  var flip=SESSION.flip, sp=SESSION.spot;
+  var ibh=SESSION.ibh, ibl=SESSION.ibl;
+  var lhod=SESSION.sessions.lh, llod=SESSION.sessions.ll;
+  var nyh=SESSION.sessions.nyh, nyl=SESSION.sessions.nyl;
+  var ibRange=ibh&&ibl?(ibh-ibl).toFixed(1):null;
+  var html='';
+
+  var setupBlock=function(label,colStyle,content){
+    return '<div style="margin-bottom:12px;padding:10px;background:var(--bg3);border-radius:5px;border-left:3px solid '+colStyle+'">'+
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:5px">'+label+'</div>'+
+      content+'</div>';
+  };
+
+  if(r==='transition'){
+    // Setup A — Long sur reclaim VAH
+    html+=setupBlock('SETUP A ★★★★★ · LONG — RECLAIM VAH '+vah+' · PRIO 1','var(--green)',
+      '<strong style="color:var(--green)">Contexte :</strong> Prix en recovery V-shape depuis LOD '+nyl+'. '+
+      'Outside Day : break baissier puis reversal complet. VPOC Daily '+vpoc+' déjà derrière. '+
+      'Le prochain obstacle majeur est VAH <strong style="color:var(--red)">'+vah+'</strong> (London HOD '+(lhod||vah)+').<br><br>'+
+      '<strong>Condition d\'entrée :</strong><br>'+
+      '① VAH '+vah+' reclaimé avec clôture 15min AU-DESSUS<br>'+
+      '② Volume > moyenne sur le break<br>'+
+      '③ Pas d\'absorption ask massive visible au carnet au-dessus<br>'+
+      '④ Charm expansif confirmé (pas de virage vers bleu)<br><br>'+
+      '<strong>Gestion :</strong><br>'+
+      '→ Entrée : first pullback sous VAH '+vah+' après acceptance (+1-2pts de tampon)<br>'+
+      '→ Stop : close 15min < '+(+vah-3.5).toFixed(0)+' (retour dans la VA = invalidation)<br>'+
+      '→ T1 : '+(+vah+15).toFixed(0)+' — London HOD / straddle upper zone · Sortir 50%<br>'+
+      '→ T2 : '+(+vah+30).toFixed(0)+' — Upper straddle 0DTE · Sortir 30%<br>'+
+      '→ T3 : Calls Wall '+(SESSION.cwall||+vah+75)+' · Laisser runner 20%<br><br>'+
+      '<strong>RR : ~4:1</strong> (15pts target T1 / 3.5pts stop)');
+
+    html+=setupBlock('SETUP B ★★★★☆ · LONG — REBOND FLIP '+flip+' / STRADDLE LOWER '+( sp?+(sp-SESSION.straddle*.5).toFixed(0):'')+' · PRIO 2','var(--green)',
+      '<strong>Contexte :</strong> Si rejection VAH '+vah+' et pullback vers flip '+flip+' ou borne lower straddle. '+
+      'Charm expansif = les dips sont achetés mécaniquement. C\'est le setup "buy the dip" classique en transition→gpos.<br><br>'+
+      '<strong>Condition d\'entrée :</strong><br>'+
+      '① Prix retrace vers '+flip+'-'+(+flip+10).toFixed(0)+' (zone flip)<br>'+
+      '② Bougie d\'absorption bid visible (stacking bid, mèche basse rejetée)<br>'+
+      '③ Volume vendeur décroissant (épuisement des sellers)<br>'+
+      '④ Flip '+flip+' TENU sur clôture 15min<br><br>'+
+      '<strong>Gestion :</strong><br>'+
+      '→ Stop : close < '+(+flip-3.5).toFixed(0)+' (retour gamma négatif = urgence sortie)<br>'+
+      '→ T1 : VPOC '+vpoc+' · T2 : VAH '+vah+'<br>'+
+      '<strong>Invalide si :</strong> Close 15min < flip '+flip+' → sortir immédiatement, regime change.');
+
+    html+=setupBlock('SETUP C ★★★☆☆ · SHORT — REJECTION VAH '+vah+' (contre-biais) · PRIO 3','var(--red)',
+      '<strong>Contexte :</strong> Setup contre-biais (biais bull 45%). Uniquement si rejection TRÈS forte de VAH '+vah+' + London HOD '+(lhod||vah)+' + straddle upper '+(sp?+(sp+SESSION.straddle*.5).toFixed(0):'')+'.<br><br>'+
+      '<strong>Condition STRICTE :</strong><br>'+
+      '① Rejection niveau — 2 bougies 5min sans acceptance au-dessus de '+vah+'<br>'+
+      '② Ask massif visible au carnet (réel, pas une illusion de liquidité)<br>'+
+      '③ Volume vendeur en accélération<br>'+
+      '④ Charm expansif AFFAIBLI (surveiller VolSignals)<br><br>'+
+      '<strong>Gestion :</strong><br>'+
+      '→ Stop : clôture 5min > '+(+vah+5).toFixed(0)+'<br>'+
+      '→ T1 : VPOC '+vpoc+' · T2 : flip '+flip+'<br>'+
+      '<strong style="color:var(--orange)">Taille RÉDUITE (50% normal) — setup contre-biais + charm expansif.</strong>');
+
+    html+=setupBlock('⛔ À ÉVITER — RÈGLES ABSOLUES','var(--red)',
+      '<strong style="color:var(--red)">✕ Short en milieu de range ('+( vpoc||'')+'-'+vah+') sans rejection</strong> — zone de bruit<br>'+
+      '<strong style="color:var(--red)">✕ Long au-dessus de VAH '+vah+' sans acceptance</strong> — chasse de stop<br>'+
+      '<strong style="color:var(--red)">✕ Trade 12h30-13h30 ET</strong> — lunch US, liquidité -40%, faux signaux x2<br>'+
+      '<strong style="color:var(--orange)">⚠ Ne pas shorter si flip '+flip+' toujours tenu</strong> — charm expansif achète les dips<br>'+
+      '<strong style="color:var(--orange)">⚠ Pas d\'entrée sans vue bookmap confirmée</strong> — journée Outside Day = faux signaux nombreux');
+
+  } else if(r==='gneg'){
+    html+=setupBlock('SETUP A ★★★★★ · SHORT — REJECTION FLIP / VAH · PRIO 1','var(--red)',
+      '<strong>Entrée :</strong> Rejection flip '+flip+' ou VAH '+vah+' avec stacking ask<br>'+
+      '<strong>Stop :</strong> Close > '+(+flip+4).toFixed(0)+'<br>'+
+      '<strong>T1 :</strong> VPOC '+vpoc+' · <strong>T2 :</strong> VAL '+val+'<br>'+
+      '<strong>Charm suppressif :</strong> dips non soutenus — vent favorable sur le short.');
+    html+=setupBlock('SETUP B ★★★☆☆ · SHORT — NY OPEN CONTINUATION · PRIO 2','var(--red)',
+      '<strong>Condition :</strong> Open NY sous flip '+flip+' sans reclaim en 30min<br>'+
+      '<strong>Entrée :</strong> Pullback vers flip · Stop : close > flip · Cible : VAL '+val);
+
+  } else {
+    html+=setupBlock('SETUP A ★★★★★ · LONG — RECLAIM FLIP + 2 TPO · PRIO 1','var(--green)',
+      '<strong>Entrée :</strong> Flip '+flip+' reclaimé + 2 TPO acceptance<br>'+
+      '<strong>Stop :</strong> Close < '+(+flip-3).toFixed(0)+'<br>'+
+      '<strong>T1 :</strong> VAH '+vah+' · <strong>T2 :</strong> Extension +1×IB');
+    html+=setupBlock('SETUP B ★★★★☆ · CREDIT PUT SPREAD — Near Lower · PRIO 2','var(--gold)',
+      '<strong>Condition :</strong> Gamma+ tenu + prix > flip<br>'+
+      '<strong>Structure :</strong> Short put lower / Long put lower-15<br>'+
+      '<strong>Max gain :</strong> Prime si prix > lower expiration');
+  }
+
+  c.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SESSIONS
+// ═══════════════════════════════════════════════════════════════
+function updateSessions(){
+  var s=SESSION.sessions;
+  setText('sess-asia-h',s.ah||'—'); setText('sess-asia-l',s.al||'—');
+  setText('sess-lon-h',s.lh||'—'); setText('sess-lon-l',s.ll||'—');
+  setText('sess-ny-h',s.nyh||'—'); setText('sess-ny-l',s.nyl||'—');
+  s.ah=parseFloat(el('si-ah').value)||s.ah||0;
+  s.al=parseFloat(el('si-al').value)||s.al||0;
+  s.lh=parseFloat(el('si-lh').value)||s.lh||0;
+  s.ll=parseFloat(el('si-ll').value)||s.ll||0;
+  s.nyh=parseFloat(el('si-nyh').value)||s.nyh||0;
+  s.nyl=parseFloat(el('si-nyl').value)||s.nyl||0;
+  SESSION.sessions=s;
+  setVal('si-ah',s.ah||''); setVal('si-al',s.al||'');
+  setVal('si-lh',s.lh||''); setVal('si-ll',s.ll||'');
+  setVal('si-nyh',s.nyh||''); setVal('si-nyl',s.nyl||'');
+  setText('sess-asia-h',s.ah||'—'); setText('sess-asia-l',s.al||'—');
+  setText('sess-lon-h',s.lh||'—'); setText('sess-lon-l',s.ll||'—');
+  setText('sess-ny-h',s.nyh||'—'); setText('sess-ny-l',s.nyl||'—');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════
+function drawPriceMap(){
+  var canvas=el('price-map-canvas'); if(!canvas) return;
+  var wrap=el('price-map-wrap');
+  var W=wrap.offsetWidth||700, H=wrap.offsetHeight||450;
+  canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  var sp=SESSION.spot||SESSION.flip||6820;
+  var half=parseInt(el('pm-range').value)||200;
+  var minP=sp-half, maxP=sp+half;
+  var LM=52, RM=150, TM=14, BM=14;
+  var toY=function(p){return TM+(maxP-p)/(maxP-minP)*(H-TM-BM);};
+  ctx.fillStyle='#04070b'; ctx.fillRect(0,0,W,H);
+
+  // Gamma zones
+  if(SESSION.flip){
+    var fy=toY(SESSION.flip);
+    ctx.fillStyle='rgba(240,48,80,.035)'; ctx.fillRect(LM,TM,W-LM-RM,Math.max(0,fy-TM));
+    ctx.fillStyle='rgba(0,232,122,.035)'; ctx.fillRect(LM,fy,W-LM-RM,H-fy-BM);
+    ctx.fillStyle='rgba(240,120,32,.1)'; ctx.fillRect(LM,fy-1,W-LM-RM,2);
+  }
+  // Value area
+  if(SESSION.vah&&SESSION.val){
+    ctx.fillStyle='rgba(232,160,0,.04)';
+    ctx.fillRect(LM,toY(SESSION.vah),W-LM-RM,toY(SESSION.val)-toY(SESSION.vah));
+  }
+  // Straddle zone
+  if(SESSION.straddle&&sp){
+    var su=toY(sp+SESSION.straddle*.5), sl=toY(sp-SESSION.straddle*.5);
+    ctx.fillStyle='rgba(0,200,240,.04)'; ctx.fillRect(LM,su,W-LM-RM,sl-su);
+    ctx.strokeStyle='rgba(0,200,240,.25)'; ctx.lineWidth=1; ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.moveTo(LM,su); ctx.lineTo(W-RM,su); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(LM,sl); ctx.lineTo(W-RM,sl); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // Grid
+  var step=half<=100?10:half<=200?25:50;
+  for(var gp=Math.ceil(minP/step)*step;gp<=maxP;gp+=step){
+    var gy=toY(gp);
+    ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(LM,gy); ctx.lineTo(W-RM,gy); ctx.stroke();
+    ctx.fillStyle='#3a5568'; ctx.font='9px Share Tech Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText(gp.toFixed(0),LM-5,gy+3);
+  }
+  // Levels
+  var all=buildAllLevels().filter(function(l){return l.price>=minP&&l.price<=maxP;});
+  var usedY={};
+  all.sort(function(a,b){return b.price-a.price;}).forEach(function(lv){
+    var y=toY(lv.price);
+    var isSpot=lv.isSpot;
+    var col=isSpot?'#ffffff':lv.type==='R'?'#f03050':lv.type==='S'?'#00e87a':lv.type==='P'?'#f07820':'#e8a000';
+    ctx.strokeStyle=col; ctx.lineWidth=isSpot?2.5:1;
+    ctx.setLineDash(lv.tag==='STR'?[3,5]:[]);
+    ctx.beginPath(); ctx.moveTo(LM,y); ctx.lineTo(W-RM,y); ctx.stroke();
+    ctx.setLineDash([]);
+    // Distance on left
+    if(!isSpot&&sp){
+      var dist=+(lv.price-sp).toFixed(1);
+      ctx.fillStyle=dist>0?'rgba(240,48,80,.5)':'rgba(0,232,122,.5)';
+      ctx.font='8px Share Tech Mono,monospace'; ctx.textAlign='right';
+      ctx.fillText((dist>0?'+':'')+dist,LM-6,y+3);
+    }
+    // Label on right
+    var ly=y; for(var k=0;k<20;k++){var rk=Math.round(ly);if(!usedY[rk]){usedY[rk]=1;break;}ly+=10;}
+    var lx=W-RM+4;
+    if(isSpot){
+      ctx.fillStyle='#fff'; ctx.fillRect(lx,ly-8,RM-6,15);
+      ctx.fillStyle='#04070b'; ctx.font='bold 10px Orbitron,monospace'; ctx.textAlign='center';
+      ctx.fillText(lv.price.toFixed(2),lx+(RM-6)/2,ly+3);
+    } else {
+      ctx.fillStyle=col+'18'; ctx.fillRect(lx,ly-7,RM-6,13);
+      ctx.fillStyle=col; ctx.font='8px Share Tech Mono,monospace'; ctx.textAlign='left';
+      ctx.fillText(lv.name.slice(0,15)+' '+lv.price.toFixed(0),lx+3,ly+3);
+    }
+  });
+  // Zone labels
+  ctx.fillStyle='rgba(0,200,240,.35)'; ctx.font='8px Share Tech Mono,monospace'; ctx.textAlign='left';
+  if(SESSION.straddle&&sp){ ctx.fillText('STRADDLE',LM+4,toY(sp+SESSION.straddle*.5)+12); }
+  if(SESSION.vah&&SESSION.val){ ctx.fillStyle='rgba(232,160,0,.35)'; ctx.fillText('VALUE AREA',LM+4,toY(SESSION.vah)+12); }
+}
+
+function drawNiveauxChart(){
+  var canvas=el('niveaux-canvas'); if(!canvas) return;
+  var wrap=el('niveaux-wrap');
+  var W=wrap.offsetWidth-2||308, H=wrap.offsetHeight-2||300;
+  canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  var sp=SESSION.spot||SESSION.flip||6820;
+  var all=buildAllLevels();
+  var prices=all.map(function(l){return l.price;}).filter(function(p){return p>100;});
+  if(!prices.length) return;
+  var minP=Math.min.apply(null,prices)-30, maxP=Math.max.apply(null,prices)+30;
+  var LM=4, RM=106, TM=8, BM=8;
+  var toY=function(p){return TM+(maxP-p)/(maxP-minP)*(H-TM-BM);};
+  ctx.fillStyle='#04070b'; ctx.fillRect(0,0,W,H);
+  // Zones
+  if(SESSION.vah&&SESSION.val){ctx.fillStyle='rgba(232,160,0,.05)';ctx.fillRect(LM,toY(SESSION.vah),W-LM-RM,toY(SESSION.val)-toY(SESSION.vah));}
+  if(SESSION.straddle&&sp){
+    var su=toY(sp+SESSION.straddle*.5),sl=toY(sp-SESSION.straddle*.5);
+    ctx.fillStyle='rgba(0,200,240,.04)'; ctx.fillRect(LM,su,W-LM-RM,sl-su);
+    ctx.strokeStyle='rgba(0,200,240,.2)'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(LM,su); ctx.lineTo(W-RM,su); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(LM,sl); ctx.lineTo(W-RM,sl); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  var usedY={};
+  all.sort(function(a,b){return b.price-a.price;}).forEach(function(lv){
+    if(lv.price<minP||lv.price>maxP) return;
+    var y=toY(lv.price);
+    var isSpot=lv.isSpot;
+    var col=isSpot?'#fff':lv.type==='R'?'#f03050':lv.type==='S'?'#00e87a':lv.type==='P'?'#f07820':'#e8a000';
+    ctx.strokeStyle=col; ctx.lineWidth=isSpot?2:1;
+    ctx.beginPath(); ctx.moveTo(LM,y); ctx.lineTo(W-RM,y); ctx.stroke();
+    var ly=y; for(var k=0;k<20;k++){var rk=Math.round(ly);if(!usedY[rk]){usedY[rk]=1;break;}ly+=9;}
+    var lx=W-RM+3;
+    if(isSpot){
+      ctx.fillStyle='#fff'; ctx.fillRect(lx,ly-7,RM-4,13);
+      ctx.fillStyle='#04070b'; ctx.font='bold 9px Orbitron,monospace'; ctx.textAlign='center';
+      ctx.fillText(lv.price.toFixed(2),lx+(RM-4)/2,ly+3);
+    } else {
+      ctx.fillStyle=col+'15'; ctx.fillRect(lx,ly-6,RM-4,11);
+      ctx.fillStyle=col; ctx.font='8px Share Tech Mono,monospace'; ctx.textAlign='left';
+      ctx.fillText(lv.name.slice(0,12)+' '+lv.price.toFixed(0),lx+2,ly+3);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM LEVELS
+// ═══════════════════════════════════════════════════════════════
+function addCustomLevel(){
+  var n=el('cl-name').value.trim(), p=parseFloat(el('cl-price').value), t=el('cl-type').value;
+  if(!n||!p) return;
+  SESSION.customLevels.push({name:n,price:p,type:t});
+  el('cl-name').value=''; el('cl-price').value='';
+  renderCustomLevelsList(); renderSituationLevels(); renderConfluences();
+  if(isActive('chart')){drawPriceMap();drawNiveauxChart();}
+}
+
+function renderCustomLevelsList(){
+  var c=el('custom-levels-list'); if(!c) return;
+  if(!SESSION.customLevels.length){c.innerHTML='<div style="padding:8px 12px;color:var(--text3);font-size:11px">Ajoute les niveaux PDH, PDL, DO, etc.</div>';return;}
+  c.innerHTML=SESSION.customLevels.sort(function(a,b){return b.price-a.price;}).map(function(lv,i){
+    var col=lv.type==='R'?'var(--red)':lv.type==='S'?'var(--green)':lv.type==='P'?'var(--accent)':'var(--gold)';
+    return '<div class="lv-row" style="padding:4px 12px">'+
+      '<span class="lv-tag '+lv.type+'">'+lv.type+'</span>'+
+      '<span style="font-family:Orbitron,monospace;font-size:11px;font-weight:700;color:'+col+';min-width:50px">'+lv.price+'</span>'+
+      '<span style="font-size:11px;color:var(--text2);flex:1">'+lv.name+'</span>'+
+      '<span style="cursor:pointer;color:var(--text3);font-size:11px" onclick="SESSION.customLevels.splice('+i+',1);renderCustomLevelsList();renderSituationLevels();if(isActive(\'chart\')){drawPriceMap();drawNiveauxChart();}">✕</span>'+
+    '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// JOURNAL
+// ═══════════════════════════════════════════════════════════════
+function addTrade(){
+  var entry=parseFloat(el('j-entry').value), exit=parseFloat(el('j-exit').value);
+  if(!entry||!exit) return;
+  var qty=parseInt(el('j-qty').value)||1, dir=el('j-dir').value;
+  var pnl=dir==='Long'?(exit-entry)*qty:(entry-exit)*qty;
+  SESSION.trades.unshift({
+    date:el('j-date').value||SESSION.date, inst:el('j-inst').value, dir,
+    entry, exit, qty, pnl:+pnl.toFixed(2),
+    setup:el('j-setup').value, note:el('j-note').value, rules:el('j-rules').value
+  });
+  ['j-entry','j-exit','j-setup','j-note'].forEach(function(id){el(id).value='';});
+  el('j-rules').value='ok';
+  renderTrades(); renderJournalComment();
+}
+
+function clearTrades(){if(confirm('Vider tous les trades ?')){SESSION.trades=[];renderTrades();renderJournalComment();}}
+
+function renderTrades(){
+  var trades=SESSION.trades;
+  var wins=trades.filter(function(t){return t.pnl>0;});
+  var losses=trades.filter(function(t){return t.pnl<0;});
+  var viols=trades.filter(function(t){return t.rules&&t.rules!=='ok';});
+  var totalPnl=trades.reduce(function(s,t){return s+t.pnl;},0);
+  var wr=trades.length?Math.round(wins.length/trades.length*100)+'%':'—';
+  var avgW=wins.length?(wins.reduce(function(s,t){return s+t.pnl;},0)/wins.length).toFixed(2):'—';
+  var avgL=losses.length?Math.abs(losses.reduce(function(s,t){return s+t.pnl;},0)/losses.length).toFixed(2):'—';
+  var gW=wins.reduce(function(s,t){return s+t.pnl;},0);
+  var gL=Math.abs(losses.reduce(function(s,t){return s+t.pnl;},0));
+  var pf=gL>0?(gW/gL).toFixed(2):wins.length?'∞':'—';
+  setText('j-total',trades.length);
+  setText('j-wr',wr); el('j-wr')&&(el('j-wr').style.color=parseFloat(wr)>=50?'var(--green)':'var(--red)');
+  setText('j-pnl',totalPnl.toFixed(2)); el('j-pnl')&&(el('j-pnl').style.color=totalPnl>=0?'var(--green)':'var(--red)');
+  setText('j-aw',avgW!=='—'?'+'+avgW:'—');
+  setText('j-al',avgL!=='—'?'-'+avgL:'—');
+  setText('j-pf',pf);
+  // Today count
+  var todayT=trades.filter(function(t){return t.date===SESSION.date;});
+  setText('j-today-count',todayT.length+' trade'+(todayT.length>1?'s':'')+' aujourd\'hui'+(todayT.length>=2?' ⚠ MAX':''));
+  el('j-today-count')&&(el('j-today-count').style.color=todayT.length>=2?'var(--red)':'var(--text3)');
+  // Violations
+  setText('j-viol-count',viols.length+' violation'+(viols.length>1?'s':''));
+  el('j-viol-count')&&(el('j-viol-count').style.color=viols.length>0?'var(--red)':'var(--text3)');
+  var violEl=el('j-violations');
+  if(violEl){
+    if(!viols.length){violEl.innerHTML='<span style="color:var(--green)">✓ Aucune violation enregistrée.</span>';}
+    else{
+      var vCounts={};
+      viols.forEach(function(t){vCounts[t.rules]=(vCounts[t.rules]||0)+1;});
+      violEl.innerHTML=Object.keys(vCounts).map(function(k){
+        return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">'+
+          '<span class="badge viol">'+vCounts[k]+'×</span>'+
+          '<span style="color:var(--text2);font-size:11px">'+k+'</span>'+
+        '</div>';
+      }).join('');
+    }
+  }
+  // List
+  var c=el('trade-list'); if(!c) return;
+  c.innerHTML=trades.length?trades.map(function(t){
+    return '<div class="trade-row">'+
+      '<span style="color:var(--text3)">'+t.date+'</span>'+
+      '<span>'+t.inst+'</span>'+
+      '<span style="color:'+(t.dir==='Long'?'var(--green)':'var(--red)')+'">'+t.dir+'</span>'+
+      '<span>'+t.entry+'</span>'+
+      '<span>'+t.exit+'</span>'+
+      '<span class="badge '+(t.pnl>=0?'w':'l')+'">'+(t.pnl>=0?'+':'')+t.pnl+'</span>'+
+      '<span style="color:var(--text3);font-size:10px">'+t.setup+'</span>'+
+      '<span style="color:var(--text3);font-size:10px">'+t.note+'</span>'+
+      '<span class="badge '+(t.rules==='ok'?'w':'viol')+'">'+t.rules+'</span>'+
+    '</div>';
+  }).join(''):'<div style="padding:14px;color:var(--text3);font-size:11px;text-align:center">Aucun trade</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHECKLIST
+// ═══════════════════════════════════════════════════════════════
+function toggleChk(el_){
+  el_.classList.toggle('checked');
+  var items=document.querySelectorAll('.chk-item');
+  var checked=document.querySelectorAll('.chk-item.checked').length;
+  setText('chk-score',checked+'/'+items.length);
+  el('chk-score').style.color=checked===items.length?'var(--green)':checked>=3?'var(--gold)':'var(--red)';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE PRICE
+// ═══════════════════════════════════════════════════════════════
+var _si=0;
+function doFetch(){
+  var sources=['http://localhost:3000/price',
+    'https://query1.finance.yahoo.com/v8/finance/chart/ES%3DF?interval=1m&range=1d',
+    'https://query2.finance.yahoo.com/v8/finance/chart/ES%3DF?interval=1m&range=1d'];
+  var url=sources[_si];
+  var isLocal=url.includes('localhost');
+  fetch(url,{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var d;
+      if(isLocal){d=data;}
+      else{
+        var meta=data&&data.chart&&data.chart.result&&data.chart.result[0]&&data.chart.result[0].meta;
+        if(!meta||!meta.regularMarketPrice) throw new Error('no price');
+        var p=meta.regularMarketPrice,prev=meta.previousClose||p;
+        d={price:p,change:+(p-prev).toFixed(2),changePct:+((p-prev)/prev*100).toFixed(2),label:'ES'};
+      }
+      _si=0;
+      SESSION.spot=d.price;
+      var col=d.change>=0?'var(--green)':'var(--red)';
+      var arr=d.change>0?'▲':d.change<0?'▼':'·';
+      var pe=el('live-price-el');
+      if(pe){pe.textContent=(d.label||'ES')+' '+d.price.toFixed(2)+' '+arr+' '+(d.change>=0?'+':'')+d.change.toFixed(2);pe.style.color=col;}
+      var dot=el('live-dot'); if(dot){dot.style.background=col;dot.classList.add('on');}
+      propagate();
+    })
+    .catch(function(){
+      _si++;
+      if(_si<sources.length) setTimeout(doFetch,600);
+      else{_si=0;var dot=el('live-dot');if(dot){dot.style.background='#f03050';dot.classList.remove('on');}}
+    });
+}
+
+el('manual-price').addEventListener('change',function(){
+  var p=parseFloat(this.value); if(p>100){SESSION.spot=p;var pe=el('live-price-el');if(pe){pe.textContent='MAN '+p.toFixed(2);pe.style.color='var(--gold)';}propagate();}
+});
+
+// NY Timer
+function updateTimer(){
+  var now=new Date();
+  var etH=now.getUTCHours()-5; if(etH<0) etH+=24;
+  var etM=now.getUTCMinutes(), etS=now.getUTCSeconds();
+  var sessions=[{name:'Asia Open',h:18,m:0},{name:'London Open',h:3,m:0},{name:'NY Open',h:9,m:30},{name:'NY Close',h:16,m:0}];
+  var minNow=etH*60+etM;
+  var next=null;
+  for(var i=0;i<sessions.length;i++){
+    var sm=sessions[i].h*60+sessions[i].m;
+    if(sm>minNow){next=sessions[i];var diff=sm-minNow;next.hLeft=Math.floor(diff/60);next.mLeft=diff%60;break;}
+  }
+  var te=el('ny-timer');
+  if(te&&next) te.textContent=next.name+' dans '+(next.hLeft?next.hLeft+'h ':'')+next.mLeft+'min';
+  else if(te) te.textContent='ET '+etH.toString().padStart(2,'0')+':'+etM.toString().padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showTab(tab){
+  document.querySelectorAll('.htab').forEach(function(t){
+    t.classList.toggle('active',t.dataset.tab===tab);
+  });
+  document.querySelectorAll('.page').forEach(function(p){
+    p.classList.toggle('active',p.id==='page-'+tab);
+  });
+  setTimeout(function(){
+    if(tab==='chart'){drawPriceMap();drawNiveauxChart();renderCustomLevelsList();renderLevelDesc();renderChartComment();}
+    if(tab==='options') updateOptions();
+    if(tab==='dealer'){renderCharm();renderVanna();renderDealerAnalysis();renderDealerComment();renderGEXStrikes();setTimeout(drawGEXBars,50);}
+    if(tab==='futures'){updateCOT();updateRoll();renderFuturesSetups();updateDayTypeDesc();updateIB();renderFuturesComment();}
+    if(tab==='journal'){renderTrades();renderJournalComment();}
+    if(tab==='situation'){renderSituationLevels();renderConfluences();renderSituationComment();}
+  },60);
+}
+document.querySelectorAll('.htab').forEach(function(t){
+  t.addEventListener('click',function(){showTab(t.dataset.tab);});
+});
+function isActive(tab){var p=el('page-'+tab);return p&&p.classList.contains('active');}
+
+// Cursor on price map
+el('price-map-canvas').addEventListener('mousemove',function(e){
+  var rect=this.getBoundingClientRect();
+  var y=e.clientY-rect.top;
+  var half=parseInt(el('pm-range').value)||200;
+  var sp=SESSION.spot||SESSION.flip||6820;
+  var H=this.height, TM=14, BM=14;
+  var p=+(sp+half-(y-TM)/(H-TM-BM)*(2*half)).toFixed(2);
+  var d=+(p-(SESSION.spot||0)).toFixed(1);
+  setText('pm-cursor',p.toFixed(2)+(SESSION.spot?' · '+(d>=0?'+':'')+d+' pts':''));
+});
+el('price-map-canvas').addEventListener('mouseleave',function(){setText('pm-cursor','');});
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function el(id){return document.getElementById(id);}
+function setText(id,v){var e=el(id);if(e)e.textContent=v;}
+function setVal(id,v){var e=el(id);if(e)e.value=v;}
+
+// ═══════════════════════════════════════════════════════════════
+// PRELOAD — 05/03/2026 — MàJ 15:00 ET depuis VolSignals + Chart
+// ═══════════════════════════════════════════════════════════════
+(function preload(){
+  // ── DONNÉES VOLSIGNALS (Image 1) ──────────────────────────────
+  // SPX 6869.50 · Straddle 0DTE Mar5 PM : $56.10
+  // Flip dashed line : 6819 · Gamma gradient : VERT au spot → transition/gpos
+  // Charm Blue/Yellow : JAUNE dominant autour de 6869 → EXPANSIF
+  // Positions by Strike : Calls Wall ~6950, Puts Wall ~6760
+  // ── CHART ES 15min (Image 2) ──────────────────────────────────
+  // London HOD : 6895-6900 · London LOD : 6842-6845
+  // Yesterday opening supply : 6830 · WED 04 POC : 6794
+  // Supply zone rejet / Prev Weekly Low : 6770-6780
+  // Very High Balance Volume Zone : 6920-6935
+  // ── VOLUME PROFILE (Image 3) ─────────────────────────────────
+  // Prix actuel : ~6862.50 · VPOC Daily (orange) : ~6804
+  // VAH : ~6874 · VAL : ~6774 · Ligne violette : ~6852
+
+  SESSION.date='05/03/2026';
+  SESSION.spot=6753;        // SPX 6752.96 VolSignals 06/03 17h20
+  SESSION.flip=6820;        // Gamma flip ~6820 (rouge sous ce niveau)
+  SESSION.cwall=6805;       // Calls Wall VolSignals — grosse barre verte ~6805
+  SESSION.pwall=6665;       // Puts Wall VolSignals — grosse barre verte ~6665
+  SESSION.straddle=40.45;   // Straddle 0DTE Mar 6 PM — lu VolSignals 17h20
+  SESSION.vix=25;           // VIX estimé — marché -1.14%
+  SESSION.pcr=1.3;
+  SESSION.regime='gneg';    // Gradient Gamma ROUGE — prix 6753 sous flip 6820
+  SESSION.charmScheme='blue-yellow';
+  SESSION.charmColor='yellow';
+  SESSION.charmEffect='expansif';
+  SESSION.vannaDir='bearish';
+  SESSION.vpoc={d:6842,w:6820};  // POC daily 6842 (MP), VPOC weekly 6820
+  SESSION.vah=6856;              // VAH daily lu market profile
+  SESSION.val=6778;              // VAL daily lu market profile (purple line)
+  SESSION.ibh=6884;
+  SESSION.ibl=6816;
+  SESSION.dayType='Trend';
+  SESSION.tpoNotes='Trend day baissier : open 6884 → LOD 6711 → rebond partiel. Prix en zone Supply Rejet / Prev Weekly Low 6754-6782. VAL 6778 cassée. POC daily 6842 très loin au-dessus. Singles créés 6711-6778 = déséquilibre baissier. DOM : ask wall massif 6775-6780 (904/1.1k/946 prints), bid stacks 6748-6750.';
+  SESSION.cot={cl:248000,cs:312000,nl:185000,ns:156000};
+  SESSION.roll={front:6747,back:6758,days:6};
+  SESSION.sessions={
+    ah:6870, al:6842,
+    lh:6884, ll:6828,
+    nyh:6831, nyl:6711
+  };
+
+  SESSION.context=
+    '<strong style="color:var(--red)">06/03/26 17h20 ET — GAMMA NÉGATIF · Trend Day · Supply Rejet Zone</strong><br>'+
+    'SPX <strong>6752.96</strong> (−1.14%) · Straddle 0DTE <strong style="color:var(--gold)">$40.45</strong> → Borne ↑ <strong style="color:var(--red)">6783</strong> / Borne ↓ <strong style="color:var(--green)">6712</strong><br>'+
+    '<strong style="color:var(--red)">Flip 6820</strong> — prix <strong>−67pts en dessous</strong> → Gamma NÉGATIF. VAL 6778 cassée = bearish structure.<br>'+
+    '<strong style="color:var(--green)">Charm JAUNE EXPANSIF</strong> → pression acheteuse mécanique PM. Support partiel sur les dips. Dernier heure = charm maximal.<br>'+
+    '<strong style="color:var(--red)">DOM 17h</strong> : Ask wall massif 6775-6780 (prints 904/1.1k/946). Bid stacks 6748-6750. Zone de lutte.<br>'+
+    'Résistances : Ask wall DOM <strong style="color:var(--red)">6775-6780</strong> · Straddle upper <strong style="color:var(--red)">6783</strong> · Monthly OPEN <strong style="color:var(--red)">6818</strong> · Flip <strong style="color:var(--red)">6820</strong>.<br>'+
+    'Supports : Bid DOM <strong style="color:var(--green)">6748-6750</strong> · Straddle lower <strong style="color:var(--green)">6712</strong> · Weekly Low <strong style="color:var(--green)">6711</strong>.';
+
+  SESSION.scenarios={
+    bull:20, bear:55, range:25,
+    txtBull:'Break ask wall DOM 6780 + clôture 15min > 6783 (straddle upper) → squeeze vers Monthly OPEN 6818. Charm expansif + fin de session = possible squeeze PM. Entry : absorption bid 6750-6753 + wick rejeté + clôture 5min > 6758. Stop < 6745. T1 : 6783. T2 : 6805 (Calls Wall).',
+    txtBear:'Breakdown bid DOM 6748 avec volume → straddle lower 6712 / Weekly Low 6711. Gamma négatif amplifie. Vanna baissière booste puts. <strong style="color:var(--red)">Entry : break 6748 avec volume + clôture 5min < 6745. Stop > 6758. T1 : 6712. T2 : 6665 (Puts Wall).</strong>',
+    txtRange:'Consolidation 6712-6783 (range straddle $40.45). Ask wall 6780 vs bid stack 6748. Charm expansif PM = oscillations amorties. VPOC 6842 inaccessible ce jour. Attendre break borne.'
+  };
+
+  SESSION.customLevels=[
+    {name:'Calls Wall VolSignals',price:6955,type:'R'},
+    {name:'Very High Balance Zone',price:6920,type:'R'},
+    {name:'Yesterday 2x Supply',price:6890,type:'R'},
+    {name:'VAH Daily 06/03',price:6856,type:'R'},
+    {name:'POC Daily 06/03',price:6842,type:'N'},
+    {name:'Gamma Flip',price:6820,type:'P'},
+    {name:'Monthly OPEN + HIGH 02/02',price:6818,type:'R'},
+    {name:'Straddle Upper 0DTE',price:6783,type:'R'},
+    {name:'Ask Wall DOM 6775-6780',price:6778,type:'R'},
+    {name:'VAL Daily 06/03',price:6778,type:'S'},
+    {name:'Calls Wall (proche)',price:6805,type:'R'},
+    {name:'Supply Rejet / Prev Weekly Low',price:6754,type:'S'},
+    {name:'LOD WPP',price:6770,type:'S'},
+    {name:'Bid DOM stack',price:6750,type:'S'},
+    {name:'Straddle Lower 0DTE',price:6712,type:'S'},
+    {name:'Weekly Low / Tue LOD',price:6711,type:'S'},
+    {name:'Puts Wall VolSignals',price:6665,type:'S'},
+  ];
+
+  SESSION.gexStrikes=[
+    {price:6955,note:'Calls Wall ultime — résistance dealer'},
+    {price:6820,note:'Gamma Flip — PIVOT absolu rouge/vert'},
+    {price:6805,note:'Calls Wall proche — résistance intermédiaire'},
+    {price:6783,note:'Straddle Upper 0DTE — gamma pinning'},
+    {price:6778,note:'Ask Wall DOM + VAL cassée — résistance'},
+    {price:6753,note:'SPOT ACTUEL 17h20'},
+    {price:6750,note:'Bid Stack DOM — support immédiat'},
+    {price:6712,note:'Straddle Lower 0DTE — support pinning'},
+    {price:6711,note:'Weekly Low / Tue LOD — support majeur'},
+    {price:6665,note:'Puts Wall — rebond mécanique garanti'},
+  ];doFetch();
+  setTimeout(function(){
+    propagate();
+    renderCustomLevelsList();
+    renderGEXStrikes();
+    updateSessions();
+    setVal('fi-ibh',SESSION.ibh);setVal('fi-ibl',SESSION.ibl);
+    setVal('si-ah',SESSION.sessions.ah);setVal('si-al',SESSION.sessions.al);
+    setVal('si-lh',SESSION.sessions.lh);setVal('si-ll',SESSION.sessions.ll);
+    setVal('si-nyh',SESSION.sessions.nyh);setVal('si-nyl',SESSION.sessions.nyl);
+    // DOM pre-fill
+    setVal('dom-ask',6780); setVal('dom-ask-size',1100);
+    setVal('dom-bid',6750); setVal('dom-bid-size',500);
+    el('dom-note').value='Ask wall massif 6775-6780 (prints 904/1.1k/946). Bid stacks 6748-6750. Zone de lutte critique.';
+    updateDOM();
+    updateIB();
+  },150);
+  setInterval(doFetch,15000);
+  setInterval(updateTimer,30000);
+  updateTimer();
+})();
+window.addEventListener('resize',function(){if(isActive('chart')){drawPriceMap();drawNiveauxChart();}if(isActive('dealer')) drawGEXBars();});
+
+// ═══════════════════════════════════════════════════════════════
+// DOM — CARNET D'ORDRES
+// ═══════════════════════════════════════════════════════════════
+function updateDOM(){
+  var ask=parseFloat(el('dom-ask').value)||0;
+  var askSz=parseFloat(el('dom-ask-size').value)||0;
+  var bid=parseFloat(el('dom-bid').value)||0;
+  var bidSz=parseFloat(el('dom-bid-size').value)||0;
+  var note=el('dom-note').value||'';
+  var sp=SESSION.spot||0;
+  var d=el('dom-analysis'); if(!d) return;
+
+  if(!ask&&!bid){d.innerHTML='Renseigne les niveaux DOM pour activer l\'analyse.';return;}
+
+  var html='';
+  var now=new Date();
+  setText('dom-time', now.getHours()+'h'+String(now.getMinutes()).padStart(2,'0'));
+
+  if(ask){
+    var distAsk=(ask-sp).toFixed(1);
+    var bigAsk=askSz>=500;
+    html+='<div style="margin-bottom:6px">'+
+      '<strong style="color:var(--red)">ASK WALL '+ask+'</strong>'+
+      (askSz?' <span style="color:var(--text3)">('+askSz+' cts)</span>':'')+ ' — '+distAsk+' pts au-dessus du spot.<br>'+
+      (bigAsk?
+        '<strong style="color:var(--red)">Mur vendeur significatif.</strong> Prix va probablement tester ce niveau et rejeter si pas de volume acheteur. Stratégie : vendre le rejet sur le ask wall avec stop au-dessus.':
+        'Ask modéré. Surveiller si le carnet se renforce ou se retire (iceberg vs mur réel).')+
+    '</div>';
+  }
+  if(bid){
+    var distBid=(sp-bid).toFixed(1);
+    var bigBid=bidSz>=500;
+    html+='<div style="margin-bottom:6px">'+
+      '<strong style="color:var(--green)">BID STACK '+bid+'</strong>'+
+      (bidSz?' <span style="color:var(--text3)">('+bidSz+' cts)</span>':'')+ ' — '+distBid+' pts sous le spot.<br>'+
+      (bigBid?
+        '<strong style="color:var(--green)">Support acheteur fort.</strong> Si prix reteste ce niveau avec volume vendeur absorbé → long valide. Stop sous le bid. Invalide si le bid disparaît avant le retest.':
+        'Bid modéré. Valider la tenue avant d\'entrer long.')+
+    '</div>';
+  }
+  if(ask&&bid){
+    var spread=(ask-bid).toFixed(1);
+    html+='<div style="color:var(--text3);font-size:10px;border-top:1px solid var(--border);padding-top:5px;margin-top:3px">'+
+      'Zone de lutte : <strong style="color:var(--text2)">'+bid+' → '+ask+'</strong> ('+spread+' pts). '+
+      (parseFloat(spread)<=15?'Range serré = break imminent. Direction déterminée par le camp qui cède.':
+       'Range large = zone de distribution/accumulation. Attendre le test d\'une extrémité.')+
+    '</div>';
+  }
+  if(note) html+='<div style="margin-top:5px;font-style:italic;color:var(--text3);font-size:10px">📝 '+note+'</div>';
+
+  d.innerHTML=html||'—';
+}
+</script>
+</body>
+</html>
